@@ -320,10 +320,6 @@ const pizzas = [
     url: 'https://www.youtube.com/watch?v=lpvT-Fciu-4'
   },
   {
-    text: 'BUCKBUMBLE',
-    url: 'https://www.youtube.com/watch?v=x7ok5AV7ZrM'
-  },
-  {
     text: 'ONE HOUR',
     url: 'https://www.youtube.com/watch?v=gUqH6Weyr2M'
   },
@@ -341,7 +337,7 @@ function getPizza(pizzas) {
   return [pizzas[Math.floor(Math.random() * pizzas.length)]]
 }
 
-bot.onText(/spiderman/, function onEditableText(msg) {
+bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
   const opts = {
     reply_markup: {
       inline_keyboard: [
