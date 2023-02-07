@@ -389,6 +389,7 @@ bot.onText(/fmuf2/, (msg) => {
   const opts = {
     reply_to_message_id: msg.message_id,
     reply_markup: JSON.stringify({
+      one_time_keyboard: true,
       keyboard: [
         ['AAAAAAAAAAAAAAA'],
         ['AAAAAAAAAAAAAAAAAAAAAAAAAAA'],
