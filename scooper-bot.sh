@@ -1,8 +1,8 @@
 #!/bin/bash
 
-export TELEGRAM_TOKEN=nope
-export TELEGRAM_USER_ID=nope
-export IFF_SUBMISSION_SALT=nope
+#export TELEGRAM_TOKEN=nope
+#export TELEGRAM_USER_ID=nope
+#export IFF_SUBMISSION_SALT=nope
 
 while getopts s:t:u:S: flag
 do
