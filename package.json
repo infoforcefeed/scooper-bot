@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "axios": "^0.21.2",
+    "chatgpt": "^4.3.2",
     "jimp": "^0.16.2",
     "node-telegram-bot-api": "^0.61.0"
   }

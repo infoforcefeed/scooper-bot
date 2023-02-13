@@ -1,4 +1,14 @@
 'use strict'
+const ChatGPTProm = import('chatgpt')
+let gptApi = null
+async function getGPT() {
+  if (gptApi) return gptApi
+  const {ChatGPTAPI} = await ChatGPTProm;
+  gptApi = new ChatGPTAPI({
+    apiKey: process.env.OPENAI_API_KEY
+  })
+  return gptApi
+}
 
 const axios = require('axios')
 const Jimp = require('jimp')
@@ -348,6 +358,17 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
   bot.sendMessage(msg.chat.id, 'PIZZA TIME', opts);
 });
 
+bot.onText(/^@([^\s]+)\s(.+)$/, async function(msg, groups) {
+  const api = await getGPT()
+  const [_, username, capturedMessage] = groups 
+  if (username === 'scooper_bot') {
+    const res = await api.sendMessage(capturedMessage)
+    bot.sendMessage(msg.chat.id, res.text, {
+      reply_to_message_id: msg.message_id
+    })
+  }
+});
+
 bot.onText(/.*market.*/gi, function onEditableText(msg) {
   const m = Math.floor(Math.random() * 3);
   if (m <= 1) {
@@ -383,6 +404,16 @@ bot.onText(/.*linux.*/gi, function onEditableText(msg) {
     bot.sendMessage(msg.chat.id, msg2);
   }
 });
+
+bot.onText(/.*clear.*keyboard.*/gi, (msg) => {
+  const opts = {
+    reply_to_message_id: msg.message_id,
+    reply_markup: JSON.stringify({
+      remove_keyboard: true
+    })
+  };
+  bot.sendMessage(msg.chat.id, 'ok', opts);
+})
 
 // Keyboard replacement meme
 bot.onText(/fmuf2/, (msg) => {
