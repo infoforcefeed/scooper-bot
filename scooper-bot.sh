@@ -20,4 +20,4 @@ echo "USER ID: $TELEGRAM_USER_ID"
 echo "SALT: $IFF_SUBMISSION_SALT"
 
 cd $working_dir
-nodejs ./index.js
+nvm use && node ./index.js

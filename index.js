@@ -1,6 +1,18 @@
 'use strict'
 const ChatGPTProm = import('chatgpt')
 let gptApi = null
+
+const conversations = {}
+setTimeout(function clearConversations() {
+  const ts = Date.now()
+  for (const id of Object.keys(conversations)) {
+    const conv = conversations[id]
+    if (conv.expiration <= ts) {
+      delete conversations[id]
+    }
+  }
+}, 24*60*60*1000)
+
 async function getGPT() {
   if (gptApi) return gptApi
   const {ChatGPTAPI} = await ChatGPTProm;
@@ -358,14 +370,37 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
   bot.sendMessage(msg.chat.id, 'PIZZA TIME', opts);
 });
 
-bot.onText(/^@([^\s]+)\s(.+)$/, async function(msg, groups) {
-  const api = await getGPT()
+// chatgpt
+const CONVERSATION_TTL_MS = 48*60*60*1000
+bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, groups) {
   const [_, username, capturedMessage] = groups 
-  if (username === 'scooper_bot') {
-    const res = await api.sendMessage(capturedMessage)
-    bot.sendMessage(msg.chat.id, res.text, {
+  if (!capturedMessage) capturedMessage = username
+  const mt = msg.message_thread_id
+  const conv = conversations[mt]
+  if (username === 'scooper_bot' || conv) {
+    const opts = {}
+    if (mt && conv) {
+      opts.conversationId = conv.id
+      opts.parentMessageId = conv.messageIds[msg.reply_to_message.message_id]
+    }
+    const api = await getGPT()
+    const res = await api.sendMessage(capturedMessage, opts)
+    const sent = await bot.sendMessage(msg.chat.id, res.text, {
       reply_to_message_id: msg.message_id
     })
+
+    if (mt && conv) {
+      conv.expiration = Date.now() + CONVERSATION_TTL_MS
+      conv.messageIds[sent.message_id] = res.parentMessageId
+    } else {
+      conversations[msg.message_id] = {
+        expiration: Date.now() + CONVERSATION_TTL_MS,
+        id: res.conversationId,
+        messageIds: {
+          [sent.message_id]: res.parentMessageId
+        }
+      }
+    }
   }
 });
 
