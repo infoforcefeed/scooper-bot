@@ -256,7 +256,7 @@ bot.onText(
     };
     console.log('ayloa', payload);
     try {
-      const hello = await axios.post('https://wheypi.shithouse.tv/api/lifts', 
+      const hello = await axios.post('https://wheypi.shithouse.tv/api/lifts',
         payload,
         {headers: {'Authorization': `${process.env.LIFT_TOKEN}`}}
         );
@@ -377,12 +377,10 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 
 // chatgpt
 const CONVERSATION_TTL_MS = 48*60*60*1000
-bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, groups) {
-  const [_, username, capturedMessage] = groups 
-  if (!capturedMessage) capturedMessage = username
-  const mt = msg.message_thread_id
+bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, [, username, capturedMessage]) {
+  const mt = msg.chat.type === 'private' ? (msg.reply_to_message && msg.reply_to_message.id) : msg.message_thread_id
   const conv = conversations[mt]
-  if (username === 'scooper_bot' || conv) {
+  if (username === 'scooper_bot' || conv || msg.chat.type === 'private') {
     const opts = {}
     if (mt && conv) {
       opts.conversationId = conv.id
@@ -395,6 +393,8 @@ bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, groups) {
     })
 
     if (mt && conv) {
+      // Private chats don't have threads.
+      if (msg.chat.type === 'private') conversations[sent.message_id] = conv
       conv.expiration = Date.now() + CONVERSATION_TTL_MS
       conv.messageIds[sent.message_id] = res.parentMessageId
     } else {
