@@ -205,8 +205,13 @@ async function startLinkScraper(botInfo, db) {
 }
 
 async function getBumps() {
-  const bumpRequest = axios.get('https://api.shithouse.tv')
-  return (await bumpRequest).data.filter(b => b.image && imageRegex.exec(b.image)).reverse()
+  try {
+    const bumpRequest = axios.get('https://api.shithouse.tv')
+    return (await bumpRequest).data.filter(b => b.image && imageRegex.exec(b.image)).reverse()
+  } catch (e) {
+    console.error('failed in getting bumps')
+    return []
+  }
 }
 
 async function getSet(setName) {
