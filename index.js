@@ -378,7 +378,8 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 // chatgpt
 const CONVERSATION_TTL_MS = 48*60*60*1000
 bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, [, username, capturedMessage]) {
-  const mt = msg.chat.type === 'private' ? (msg.reply_to_message && msg.reply_to_message.id) : msg.message_thread_id
+  const msgKey = msg.chat.type === 'private' ? (msg.reply_to_message && msg.reply_to_message.id) : msg.message_thread_id
+  const mt = `${msg.chat.id}.${msgKey}`
   const conv = conversations[mt]
   if (username === 'scooper_bot' || conv || msg.chat.type === 'private') {
     const opts = {}
@@ -398,7 +399,7 @@ bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, [, username, capturedMe
       conv.expiration = Date.now() + CONVERSATION_TTL_MS
       conv.messageIds[sent.message_id] = res.parentMessageId
     } else {
-      conversations[msg.message_id] = {
+      conversations[`${msg.chat.id}.${msg.message_id}`] = {
         expiration: Date.now() + CONVERSATION_TTL_MS,
         id: res.conversationId,
         messageIds: {
