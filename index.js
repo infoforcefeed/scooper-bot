@@ -378,9 +378,9 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 // chatgpt
 const CONVERSATION_TTL_MS = 48*60*60*1000
 bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, [, username, capturedMessage]) {
-  const msgKey = msg.chat.type === 'private' ? (msg.reply_to_message && msg.reply_to_message.id) : msg.message_thread_id
+  const msgKey = msg.chat.type === 'private' ? (msg.reply_to_message && msg.reply_to_message.message_id) : msg.message_thread_id
   const mt = `${msg.chat.id}.${msgKey}`
-  const conv = conversations[mt]
+  let conv = conversations[mt]
   if (username === 'scooper_bot' || conv || msg.chat.type === 'private') {
     const opts = {}
     if (mt && conv) {
@@ -394,12 +394,10 @@ bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, [, username, capturedMe
     })
 
     if (mt && conv) {
-      // Private chats don't have threads.
-      if (msg.chat.type === 'private') conversations[sent.message_id] = conv
       conv.expiration = Date.now() + CONVERSATION_TTL_MS
       conv.messageIds[sent.message_id] = res.parentMessageId
     } else {
-      conversations[`${msg.chat.id}.${msg.message_id}`] = {
+      conv = conversations[`${msg.chat.id}.${msg.message_id}`] = {
         expiration: Date.now() + CONVERSATION_TTL_MS,
         id: res.conversationId,
         messageIds: {
@@ -407,6 +405,8 @@ bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, [, username, capturedMe
         }
       }
     }
+    // Private chats don't have threads.
+    if (msg.chat.type === 'private') conversations[`${msg.chat.id}.${sent.message_id}`] = conv
   }
 });
 
