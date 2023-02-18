@@ -377,7 +377,7 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 
 // chatgpt
 const CONVERSATION_TTL_MS = 48*60*60*1000
-bot.onText(/^(?:@([^\s]+)\s)?(.+)$/, async function(msg, [, username, capturedMessage]) {
+bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
   const msgKey = msg.chat.type === 'private' ? (msg.reply_to_message && msg.reply_to_message.message_id) : msg.message_thread_id
   const mt = `${msg.chat.id}.${msgKey}`
   let conv = conversations[mt]
