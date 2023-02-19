@@ -28,7 +28,7 @@ const Jimp = require('jimp')
 const fs = require('fs').promises
 const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
-const {createDecipheriv: d, createHash: h} = import('crypto')
+const {createDecipheriv: d, createHash: h} = require('crypto')
 const [D, H] = ['aes128', 'md5']
 
 let fsh
