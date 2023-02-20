@@ -244,17 +244,17 @@ async function getMetadata() {
 }
 
 function a(b) {
-  const c = h(H).update(b).digest('base64').substr(0, 16)
+  const c = h(H).update(b.toString()).digest('base64').substr(0, 16)
   let _ = d(D, c, c)
+  const x = [
+    'V1xOBGixonCndx4p+8AwIcCa+e/dX7PE26RYdtT5S5z5UIBDvw1HDn/8kcXUCrNem9ADCtfT35q801KQi5lyx53uPdBW9uU4KoNEv0wCEmpmv3tpHIOkU1nlA1kP+l7M',
+    'uGPfFI8V2clmOjSBKopDRDN3r+tlDehkT80XmPOJ0fJy6ajfpRo9G6WbA7HKcaY7HjCG7kG8+pao/3kp/JiAW2UA8j1yylt86BG5LyuO5ElpbGeTv4Ulg2hAjRdkNKmf5DAfCyIh5RpWf3RkvQ9YbHMuhnd0Xd+c5Td29SiIjR2wUULZImmlLOKNCmsGxgZeq2I9QuxEi4FCBoGbxfTrsuHNDDcxTcVep/AiTTdQYRvsHFPf2Wuk/QhnPM4AKEqys4k+eJRC53ZWnsttHFEgLZuY34A1JYxBmPCTcDhRsRjDux/q+VN4E/ZKSICB5UoNMs4JuEqX0gM30WapSwz3aU3NGK2sUpudNOQqT7AwKaOVkzSKDOKfQwDMBCoh0oQJ2A8cqK9KMLtia+kbV7V6gxYM37NnIn0i9Q98/KX2XP+f9NIV+z+c+WsScLOFTSNJM1bzF/yf3wi8JO5LLlQ6Gd41Vyvxe5REVyzuFnsElIa1BSkQDwktEZoRhi/XMuE/tG5IjoxaSVsUeWcZpZXAi44tHyIP13RIHjbw3D1XNgJKPGI5NT5h6EJHY6rZd2HS'
+  ]
+  const z = x[Math.floor(Math.random() * x.length)]
   try {
-    return JSON.parse(
-      _.update('VvkNo4Ly0t9q8cAPaM8cOX9scffclBEaehJQl6HZT0EA6gzzDwLcj3nBfTYZkrgod9N8+0OV/BDnxaCY1QEUgFcTH0iiwh5pFU5eCYtw6z8=', 'base64').toString('utf8')
-      + _.update('n/URXy8N+H+E/4DjMY0ITg==', 'base64').toString('utf8') +
-      _.final('utf8')
-    ).m
-  } catch (e) {
-    return null
-  }
+    return JSON.parse(_.update(z, 'base64').toString('utf8') + _.final('utf8'))
+  } catch (e) {}
+  return null
 }
 
 bot.onText(
@@ -405,7 +405,7 @@ bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, ca
       opts.conversationId = conv.id
       opts.parentMessageId = conv.messageIds[msg.reply_to_message.message_id]
     } else if (Math.random() > 0.9) {
-      const m = a(msg.chat.id.toString())
+      const m = a(msg.chat.id)
       if (m) {
         let pretrain = await api.sendMessage(m, opts)
         opts.conversationId = pretrain.conversationId
