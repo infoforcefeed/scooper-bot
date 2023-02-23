@@ -19,7 +19,6 @@ export class ChatGpt {
 class ChatGptThread implements Thread {
   private _id: string | null = null;
   private _expiration: number = Date.now() + CONVERSATION_TTL_MS;
-  private readonly _messageIds: number[] = [];
 
   constructor(private readonly _chatGpt: chatgpt.ChatGPTAPI) {}
 
@@ -33,14 +32,14 @@ class ChatGptThread implements Thread {
   ): Promise<Response> {
     let opts = {
       conversationId: this._id,
-      parentMessageId: parentMessageId && this._messageIds[parentMessageId]
+      parentMessageId
     };
     const response = await this._chatGpt.sendMessage(message, opts);
     this._expiration = Date.now() + CONVERSATION_TTL_MS;
     if (!this._id) this._id = response.conversationId;
     return {
       text: response.text,
-      messageId: parentMessageId
+      messageId: response.parentMessageId
     };
   }
 }
