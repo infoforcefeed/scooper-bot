@@ -53,7 +53,7 @@ export class ShitBot {
     capturedMessage: string
   ): Promise<void> {
     const msgKey = isPrivateMessage(msg)
-      ? (msg.reply_to_message && msg.reply_to_message.message_id)
+      ? (msg.reply_to_message?.message_id)
       : msg.message_thread_id
     const mt = `${msg.chat.id}.${msgKey}`
     let conv = this._conversations.get(mt)
@@ -140,6 +140,7 @@ async function secretPretraining(
 
   const {messageId} =
     await conv.thread.sendMessage(secret, /*parentMessageId=*/null);
+  return messageId;
 }
 
 function selectSecret(key: string): string | null {
