@@ -24,7 +24,7 @@ class ChatGptThread implements Thread {
   constructor(private readonly _chatGpt: chatgpt.ChatGPTAPI) {}
 
   get expired(): boolean {
-    return this._expiration > Date.now();
+    return this._expiration < Date.now();
   }
 
   async sendMessage(
