@@ -1,5 +1,8 @@
+import {createCipheriv, createDecipheriv, createHash} from 'crypto';
+import * as TelegramBot from 'node-telegram-bot-api';
+import {Message as TelegramMessage} from 'node-telegram-bot-api';
+
 import {ChatGpt} from "./chat-gpt";
-import crypto from 'crypto';
 
 export interface Response {
   text: string;
@@ -33,7 +36,7 @@ export class ShitBot {
   private readonly _bot: TelegramBot;
   private readonly _chatGpt: ChatGpt;
   private readonly _conversations = new Map<string, Conversation>();
-  private readonly _expiring: number;
+  private readonly _expiring: NodeJS.Timer;
 
   constructor(options: BotOptions) {
     this._bot = options.bot;
@@ -45,7 +48,7 @@ export class ShitBot {
   }
 
   async process(
-    msg: Telegram.Message,
+    msg: TelegramMessage,
     atUser: string | null,
     capturedMessage: string
   ): Promise<void> {
@@ -65,7 +68,7 @@ export class ShitBot {
       }
     } else {
       parentMessageId =
-        conv.messageIds.get(msg.reply_to_message.message_id) || null;
+        conv.messageIds.get(msg.reply_to_message.message_id.toString()) || null;
     }
 
     const res = await conv.thread.sendMessage(capturedMessage, parentMessageId);
@@ -73,7 +76,7 @@ export class ShitBot {
       reply_to_message_id: msg.message_id
     });
 
-    conv.messageIds.set(sent.message_id, res.messageId);
+    conv.messageIds.set(sent.message_id.toString(), res.messageId);
 
     // Private chats don't have threads so we must manually maintain the
     // sequence.
@@ -88,9 +91,9 @@ export class ShitBot {
 
   private async _pretrain(
     conv: Conversation,
-    msg: Telegram.Message,
+    msg: TelegramMessage,
   ): Promise<string> {
-    await secretPretraining(conv, msg.chat.id.toString());
+    return await secretPretraining(conv, msg.chat.id.toString());
   }
 
   private _expireConversations() {
@@ -102,20 +105,20 @@ export class ShitBot {
   }
 }
 
-function isPrivateMessage(msg: Telegram.Message): boolean {
+function isPrivateMessage(msg: TelegramMessage): boolean {
   return msg.chat.type === PRIVATE_TYPE;
 }
 
 function encrypt(key, str) {
-  const k = crypto.createHash('md5').update(key).digest('base64').substr(0, 16)
-  const cipher = crypto.createCipheriv('aes128', k, k)
+  const k = createHash('md5').update(key).digest('base64').substr(0, 16)
+  const cipher = createCipheriv('aes128', k, k)
   return Buffer.from(cipher.update(str, 'utf8', 'hex') + cipher.final('hex'), 'hex').toString('base64')
 }
 
 function decrypt(keyStr: string, message: string) {
   const encKey =
-    crypto.createHash('md5').update(keyStr).digest('base64').substr(0, 16);
-  const decipher = crypto.createDecipheriv('aes128', encKey, encKey);
+    createHash('md5').update(keyStr).digest('base64').substr(0, 16);
+  const decipher = createDecipheriv('aes128', encKey, encKey);
   return (
     decipher.update(message, 'base64').toString('utf8') +
     decipher.final('utf8')

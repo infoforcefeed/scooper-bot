@@ -1,14 +1,14 @@
-import {ChatGPTAPI} from 'chatgpt';
+import * as chatgpt from 'chatgpt';
 
 import {Thread, Response} from './chats';
 
 const CONVERSATION_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 
 export class ChatGpt {
-  private readonly _gptApi: ChatGPTAPI;
+  private readonly _gptApi: chatgpt.ChatGPTAPI;
 
   constructor(apiKey: string) {
-    this._gptApi = new ChatGPTAPI({apiKey});
+    this._gptApi = new chatgpt.ChatGPTAPI({apiKey});
   }
 
   newThread(): ChatGptThread {
@@ -17,11 +17,11 @@ export class ChatGpt {
 }
 
 class ChatGptThread implements Thread {
-  private _id: number | undefined;
+  private _id: string | null = null;
   private _expiration: number = Date.now() + CONVERSATION_TTL_MS;
   private readonly _messageIds: number[] = [];
 
-  constructor(private readonly _chatGpt: ChatGPTAPI) {}
+  constructor(private readonly _chatGpt: chatgpt.ChatGPTAPI) {}
 
   get expired(): boolean {
     return this._expiration > Date.now();
