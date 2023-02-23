@@ -1,35 +1,11 @@
 'use strict'
 
-const ChatGPTProm = import('chatgpt')
-let gptApi = null
-
-const conversations = {}
-setTimeout(function clearConversations() {
-  const ts = Date.now()
-  for (const id of Object.keys(conversations)) {
-    const conv = conversations[id]
-    if (conv.expiration <= ts) {
-      delete conversations[id]
-    }
-  }
-}, 24*60*60*1000)
-
-async function getGPT() {
-  if (gptApi) return gptApi
-  const {ChatGPTAPI} = await ChatGPTProm;
-  gptApi = new ChatGPTAPI({
-    apiKey: process.env.OPENAI_API_KEY
-  })
-  return gptApi
-}
-
 const axios = require('axios')
 const Jimp = require('jimp')
 const fs = require('fs').promises
 const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
-const {createDecipheriv: d, createHash: h} = require('crypto')
-const [D, H] = ['aes128', 'md5']
+const {ShitBot} = require('./src/chats')
 
 let fsh
 async function getDbFileHandle() {
@@ -243,21 +219,6 @@ async function getMetadata() {
   }
 }
 
-function a(b) {
-  const c = h(H).update(b.toString()).digest('base64').substr(0, 16)
-  let _ = d(D, c, c)
-  const x = [
-    'V1xOBGixonCndx4p+8AwIcCa+e/dX7PE26RYdtT5S5z5UIBDvw1HDn/8kcXUCrNem9ADCtfT35q801KQi5lyx53uPdBW9uU4KoNEv0wCEmpmv3tpHIOkU1nlA1kP+l7M',
-    'uGPfFI8V2clmOjSBKopDRDN3r+tlDehkT80XmPOJ0fJy6ajfpRo9G6WbA7HKcaY7HjCG7kG8+pao/3kp/JiAW2UA8j1yylt86BG5LyuO5ElpbGeTv4Ulg2hAjRdkNKmf5DAfCyIh5RpWf3RkvQ9YbHMuhnd0Xd+c5Td29SiIjR2wUULZImmlLOKNCmsGxgZeq2I9QuxEi4FCBoGbxfTrsuHNDDcxTcVep/AiTTdQYRvsHFPf2Wuk/QhnPM4AKEqys4k+eJRC53ZWnsttHFEgLZuY34A1JYxBmPCTcDhRsRjDux/q+VN4E/ZKSICB5UoNMs4JuEqX0gM30WapSwz3aU3NGK2sUpudNOQqT7AwKaOVkzSKDOKfQwDMBCoh0oQJ2A8cqK9KMLtia+kbV7V6gxYM37NnIn0i9Q98/KX2XP+f9NIV+z+c+WsScLOFTSNJM1bzF/yf3wi8JO5LLlQ6Gd41Vyvxe5REVyzuFnsElIa1BSkQDwktEZoRhi/XMuE/tG5IjoxaSVsUeWcZpZXAi44tHyIP13RIHjbw3D1XNgJKPGI5NT5h6EJHY6rZd2HS',
-    'rXt8cEkneylSBsw3fm/WHL/Qoy7FK6zX6+Gzxz0hQIOVAmGWAo5V61psMcTv+2E3OVXdyc4RHJG/JSmngM3PosFH6p88qN3lhYc3cpzC0mMrZ8fjQnNNq2dz3Zdbr9EMkX+1Uf8X5jK5MHGuqnMQqhbA+9TAblC2pqm3xTr8/4I+u3BEVfC39zEOric60cq15HdZbhFRS+T7ZtXhaFhTYUVqc+HR5gchUPr2q3GOgVuelyTzUcf7NbpSacJr6T0/PGG3rXNKXq48ZrVXzqXBcT56CTAbm+qQwVOLZIqrfSu0ffZaWbay022bbUDQfAM2bSkBsP0cMOcZjPjVvkXM5y1OYaph9hEWoGc1JfNmWTiMIFfkjXPUzkCeNQ0L/TPY',
-  ]
-  const z = x[Math.floor(Math.random() * x.length)]
-  try {
-    return JSON.parse(_.update(z, 'base64').toString('utf8') + _.final('utf8'))
-  } catch (e) {}
-  return null
-}
-
 bot.onText(
   /(?<lift>[a-zA-Z0-9\s]+): (?<sets>[0-9]+)x(?<reps>[0-9]+)@(?<weight>[0-9]+)/,
   async (msg, match) => {
@@ -394,45 +355,9 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 });
 
 // chatgpt
-const CONVERSATION_TTL_MS = 48*60*60*1000
+const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY})
 bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
-  const msgKey = msg.chat.type === 'private' ? (msg.reply_to_message && msg.reply_to_message.message_id) : msg.message_thread_id
-  const mt = `${msg.chat.id}.${msgKey}`
-  let conv = conversations[mt]
-  if (username === 'scooper_bot' || conv || msg.chat.type === 'private') {
-    const opts = {}
-    const api = await getGPT()
-    if (mt && conv) {
-      opts.conversationId = conv.id
-      opts.parentMessageId = conv.messageIds[msg.reply_to_message.message_id]
-    } else if (Math.random() > 0.9) {
-      const m = a(msg.chat.id)
-      if (m) {
-        let pretrain = await api.sendMessage(m, opts)
-        opts.conversationId = pretrain.conversationId
-        opts.parentMessageId = pretrain.parentMessageId
-      }
-    }
-    const res = await api.sendMessage(capturedMessage, opts)
-    const sent = await bot.sendMessage(msg.chat.id, res.text, {
-      reply_to_message_id: msg.message_id
-    })
-
-    if (mt && conv) {
-      conv.expiration = Date.now() + CONVERSATION_TTL_MS
-      conv.messageIds[sent.message_id] = res.parentMessageId
-    } else {
-      conv = conversations[`${msg.chat.id}.${msg.message_id}`] = {
-        expiration: Date.now() + CONVERSATION_TTL_MS,
-        id: res.conversationId,
-        messageIds: {
-          [sent.message_id]: res.parentMessageId
-        }
-      }
-    }
-    // Private chats don't have threads.
-    if (msg.chat.type === 'private') conversations[`${msg.chat.id}.${sent.message_id}`] = conv
-  }
+  await shitBot.process(msg, username, capturedMessage)
 });
 
 bot.onText(/.*market.*/gi, function onEditableText(msg) {
