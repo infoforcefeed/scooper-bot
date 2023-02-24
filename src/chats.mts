@@ -141,10 +141,10 @@ export class ShitBot {
     msg: TelegramMessage,
     text: string
   ): Promise<void> {
-    const pretraining = selectUserSecret(user);
-    if (pretraining) {
+    const training = selectUserSecret(user);
+    if (training) {
       const conv = this._newConversation(msg);
-      await this._replyToMessage(conv, msg, text, /*parentMessageId=*/null);
+      await this._replyToMessage(conv, msg, training, /*parentMessageId=*/null);
     }
   }
 
