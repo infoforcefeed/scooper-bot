@@ -2,7 +2,7 @@ import {createCipheriv, createDecipheriv, createHash} from 'crypto';
 import * as TelegramBot from 'node-telegram-bot-api';
 import {Message as TelegramMessage} from 'node-telegram-bot-api';
 
-import {ChatGpt} from "./chat-gpt";
+import {ChatGpt} from "./chat-gpt.mjs";
 
 export interface Response {
   text: string;

@@ -5,7 +5,6 @@ const Jimp = require('jimp')
 const fs = require('fs').promises
 const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
-const {ShitBot} = require('./src/chats')
 
 let fsh
 async function getDbFileHandle() {
@@ -355,9 +354,13 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 });
 
 // chatgpt
-const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY})
+const shitBot = (async () => {
+  const {ShitBot} = await import('./src/chats.mjs')
+  return new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY})
+})();
+
 bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
-  await shitBot.process(msg, username, capturedMessage)
+  await (await shitBot).process(msg, username, capturedMessage)
 });
 
 bot.onText(/.*market.*/gi, function onEditableText(msg) {

@@ -1,6 +1,6 @@
 import * as chatgpt from 'chatgpt';
 
-import {Thread, Response} from './chats';
+import {Thread, Response} from './chats.mjs';
 
 const CONVERSATION_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 

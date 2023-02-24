@@ -1,3 +1,4 @@
 node_modules
 bump-db.json
 src/**/*.js
+src/**/*.mjs
