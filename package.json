@@ -1,8 +1,15 @@
 {
+  "scripts": {
+    "compile": "tsc",
+    "start": "npm run compile && node index.js"
+  },
   "dependencies": {
+    "@types/node": "^18.14.0",
+    "@types/node-telegram-bot-api": "^0.61.2",
     "axios": "^0.21.2",
     "chatgpt": "^4.3.2",
     "jimp": "^0.16.2",
-    "node-telegram-bot-api": "^0.61.0"
+    "node-telegram-bot-api": "^0.61.0",
+    "typescript": "^4.9.5"
   }
 }
