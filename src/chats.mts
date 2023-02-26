@@ -83,7 +83,7 @@ export class ShitBot {
       ? (msg.reply_to_message?.message_id)
       : msg.message_thread_id
     const mt = `${msg.chat.id}.${msgKey}`
-    let conv = this._conversations.get(mt)
+    let conv = this._conversations.get(mt) || null
     if (conv || isPrivateMessage(msg) || atUser === BOT_NAME) {
       await this._processDirectMessage(conv, msg, text);
       return;
@@ -110,7 +110,7 @@ export class ShitBot {
       if (this._dickAround()) {
         parentMessageId = await this._pretrain(conv, msg);
       }
-    } else {
+    } else if (msg.reply_to_message) {
       parentMessageId =
         conv.messageIds.get(msg.reply_to_message.message_id.toString()) || null;
     }
@@ -124,7 +124,7 @@ export class ShitBot {
   private async _pretrain(
     conv: Conversation,
     msg: TelegramMessage,
-  ): Promise<string> {
+  ): Promise<string | null> {
     return await secretPretraining(conv, msg.chat.id.toString());
   }
 
@@ -244,9 +244,9 @@ export function encode(key, msg) {
 async function secretPretraining(
   conv: Conversation,
   key: string
-): Promise<string> {
+): Promise<string | null> {
   const secret = selectSecret(key);
-  if (!secret) return;
+  if (!secret) return null;
 
   const {messageId} =
     await conv.thread.sendMessage(secret, /*parentMessageId=*/null);
@@ -267,7 +267,8 @@ function selectSecret(key: string): string | null {
 }
 
 const userSecrets = new Map([
-  [User.NotAWolfe, new RandomSelector(['4wHuhmfA5KA+lGOwA+tyM5QLHlfVKfJLnMW0oYxpKvRLHTfLWNY3LWERk0v4mO+9PxpRb9h9x1Ki93+bQBdmNX1oovEUte4JzqMr2imQCm3XE/exdOQzVFJiGY1s0uJScObyjJGc32hXto1YhwVC9Mo+yaZKEJNssRrVj+awRKicYkcV5hp7qKLEOH7E2UlyRAn6ZiJ7Zc+3uKp1OSkRVSnWCsD0n8hEIfcl7JFh/863NiMofdMBggCKcF1EaiSsVuHTUkNNbg6t25FDgNmYelE+6Fkt3UnJP65rwrKrKvQR1eOxdGzS+cVfYP10OzzhVQ/07K5WwzKE4YPs+i2YvQTEBjvcrNPBx+zZgL77v2sQovvOK1WmkKwE6eiwGCkEmCeabuNFkBh9H32QTbAeTbFnHL5IGqCPicz65Ull32T6hfh1q28uGLBTsA3O5giXQXJMUJBY4IecCOMadjSaKj07hmnied+7SWq/Vx6rT2rmDhAFZLYjYSnpS91ObgXlZsiwXvQDUPf4Lmw+bOlC8t4q9sXJ9IHLOAiu/jj4TJeGNNG7efDyDPm8n2yGZ/syj1PmJBWZb581pWC1zz9oo8AU1vAmz2KwdJDTiVN/yngUj7K4Lm4t+cAeII7B9Y5IxmXLQEnoqLK3SRy+NY5sXE422D7MvFvwkNWeeKLCLyXiFlgnTI0uOj0wSYUcF1V+Im6ib9O2kzPkmi1+iQy6Rsy6gDUXTfpzYOFD4DJ339n55TlIzyrbL6geiy9bfvcj4rVABne1YpJ6Pd9BfVoTUw=='])]
+  [User.NotAWolfe, new RandomSelector(['4wHuhmfA5KA+lGOwA+tyM5QLHlfVKfJLnMW0oYxpKvRLHTfLWNY3LWERk0v4mO+9PxpRb9h9x1Ki93+bQBdmNX1oovEUte4JzqMr2imQCm3XE/exdOQzVFJiGY1s0uJScObyjJGc32hXto1YhwVC9Mo+yaZKEJNssRrVj+awRKicYkcV5hp7qKLEOH7E2UlyRAn6ZiJ7Zc+3uKp1OSkRVSnWCsD0n8hEIfcl7JFh/863NiMofdMBggCKcF1EaiSsVuHTUkNNbg6t25FDgNmYelE+6Fkt3UnJP65rwrKrKvQR1eOxdGzS+cVfYP10OzzhVQ/07K5WwzKE4YPs+i2YvQTEBjvcrNPBx+zZgL77v2sQovvOK1WmkKwE6eiwGCkEmCeabuNFkBh9H32QTbAeTbFnHL5IGqCPicz65Ull32T6hfh1q28uGLBTsA3O5giXQXJMUJBY4IecCOMadjSaKj07hmnied+7SWq/Vx6rT2rmDhAFZLYjYSnpS91ObgXlZsiwXvQDUPf4Lmw+bOlC8t4q9sXJ9IHLOAiu/jj4TJeGNNG7efDyDPm8n2yGZ/syj1PmJBWZb581pWC1zz9oo8AU1vAmz2KwdJDTiVN/yngUj7K4Lm4t+cAeII7B9Y5IxmXLQEnoqLK3SRy+NY5sXE422D7MvFvwkNWeeKLCLyXiFlgnTI0uOj0wSYUcF1V+Im6ib9O2kzPkmi1+iQy6Rsy6gDUXTfpzYOFD4DJ339n55TlIzyrbL6geiy9bfvcj4rVABne1YpJ6Pd9BfVoTUw=='])],
+  [User.Prestoon, new RandomSelector(['InMJkgEFS3mBfL3jeJqyKS+4e1s8ikv2c+mqgvroljEFgZqNelL8zUac97/0fRW7KJ+RnX7AAZbDz87kBCdle+RQirJbR87wD/n2wJjkvx2hEuWLFIcQsIjOV8oJRYVuNP+kQffTd31CfnV6D2QXKhuPoFE5qNxZuWE4e7EBRO1zsw4uw8uuUr0D5dtLx1wiq4JVrlMtPTc8ufzKycF0QObmd+Lslbwvpvc/T0eeUa3QlsWmODMyUImbgGFlVlzelC4AF4k79diWSZ3mAJfillwaHP4MGIqMUuZ9xHE19w5bKebB9HwGH03MFKLjOm02MvZCvmHDPPdXk9KCLVFWc4hL3pZYDny6mPEdNxyqLSXmAZYgLmX/F0ilWBf7TzEDZ5UeiO23O4NpIK8Y9mwF4+rDGxFw21WSUi+dEFX53j4='])]
 ]);
 function selectUserSecret(user): string | null {
   const secret = userSecrets.get(user)?.select();
