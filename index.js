@@ -185,7 +185,7 @@ async function startLinkScraper(botInfo, db) {
 async function getBumps() {
   try {
     const bumpRequest = axios.get('https://api.shithouse.tv')
-    return (await bumpRequest).data.filter(b => b.image && imageRegex.exec(b.image)).reverse()
+    return (await bumpRequest).data.filter(b => b.image && imageRegex.test(b.image)).reverse()
   } catch (e) {
     console.error('failed in getting bumps')
     return []
@@ -464,6 +464,23 @@ bot.onText(/fmuf/, function onEditableText(msg) {
   bot.sendMessage(msg.chat.id, 'Original Text', opts);
 });
 
+let bumpLoad = 0;
+let bumpMap = null;
+bot.onText(/^\\(\S+)$/, async (msg, [, bump]) => {
+  if ((Date.now() - bumpLoad) > (24 * 60 * 60 * 1000)) {
+    const bumps = await getBumps();
+    bumpMap = {};
+    for (const {name, image} of bumps) bumpMap[name] = image;
+    bumpLoad = Date.now();
+  }
+
+  if (bump in bumpMap) {
+    await bot.sendPhoto(
+      msg.chat.id,
+      `https://${bump}.shithouse.tv/${bumpMap[bump]}`
+    );
+  }
+})
 
 // Handle callback queries
 bot.on('callback_query', function onCallbackQuery(callbackQuery) {
