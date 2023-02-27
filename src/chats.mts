@@ -33,6 +33,7 @@ enum User {
   NotAWolfe = 628450872,
   Prestoon = 717750553,
   qdiffer = 953128114,
+  Rabutt = 572912381,
 }
 
 enum Group {
@@ -47,11 +48,14 @@ const EXPIRATION_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const USER_ALIASES = new Map<string, User>([
   ['alaina', User.NotAWolfe],
   ['bryan', User.CONNECT_SPD],
+  ['connor', User.Rabutt],
   ['dman', User.dman757],
   ['natalie', User.NotAWolfe],
   ['paige', User.leCalcifer],
   ['preston', User.Prestoon],
   ['quinlan', User.qdiffer],
+  ['rabbit', User.Rabutt],
+  ['reblink', User.Rabutt],
 ]);
 
 class Conversation {
@@ -269,7 +273,8 @@ function selectSecret(key: string): string | null {
 const userSecrets = new Map([
   [User.NotAWolfe, new RandomSelector(['4wHuhmfA5KA+lGOwA+tyM5QLHlfVKfJLnMW0oYxpKvRLHTfLWNY3LWERk0v4mO+9PxpRb9h9x1Ki93+bQBdmNX1oovEUte4JzqMr2imQCm3XE/exdOQzVFJiGY1s0uJScObyjJGc32hXto1YhwVC9Mo+yaZKEJNssRrVj+awRKicYkcV5hp7qKLEOH7E2UlyRAn6ZiJ7Zc+3uKp1OSkRVSnWCsD0n8hEIfcl7JFh/863NiMofdMBggCKcF1EaiSsVuHTUkNNbg6t25FDgNmYelE+6Fkt3UnJP65rwrKrKvQR1eOxdGzS+cVfYP10OzzhVQ/07K5WwzKE4YPs+i2YvQTEBjvcrNPBx+zZgL77v2sQovvOK1WmkKwE6eiwGCkEmCeabuNFkBh9H32QTbAeTbFnHL5IGqCPicz65Ull32T6hfh1q28uGLBTsA3O5giXQXJMUJBY4IecCOMadjSaKj07hmnied+7SWq/Vx6rT2rmDhAFZLYjYSnpS91ObgXlZsiwXvQDUPf4Lmw+bOlC8t4q9sXJ9IHLOAiu/jj4TJeGNNG7efDyDPm8n2yGZ/syj1PmJBWZb581pWC1zz9oo8AU1vAmz2KwdJDTiVN/yngUj7K4Lm4t+cAeII7B9Y5IxmXLQEnoqLK3SRy+NY5sXE422D7MvFvwkNWeeKLCLyXiFlgnTI0uOj0wSYUcF1V+Im6ib9O2kzPkmi1+iQy6Rsy6gDUXTfpzYOFD4DJ339n55TlIzyrbL6geiy9bfvcj4rVABne1YpJ6Pd9BfVoTUw=='])],
   [User.Prestoon, new RandomSelector(['InMJkgEFS3mBfL3jeJqyKS+4e1s8ikv2c+mqgvroljEFgZqNelL8zUac97/0fRW7KJ+RnX7AAZbDz87kBCdle+RQirJbR87wD/n2wJjkvx2hEuWLFIcQsIjOV8oJRYVuNP+kQffTd31CfnV6D2QXKhuPoFE5qNxZuWE4e7EBRO1zsw4uw8uuUr0D5dtLx1wiq4JVrlMtPTc8ufzKycF0QObmd+Lslbwvpvc/T0eeUa3QlsWmODMyUImbgGFlVlzelC4AF4k79diWSZ3mAJfillwaHP4MGIqMUuZ9xHE19w5bKebB9HwGH03MFKLjOm02MvZCvmHDPPdXk9KCLVFWc4hL3pZYDny6mPEdNxyqLSXmAZYgLmX/F0ilWBf7TzEDZ5UeiO23O4NpIK8Y9mwF4+rDGxFw21WSUi+dEFX53j4='])],
-  [User.qdiffer, new RandomSelector(['Xcpjosi58nMnYxurW6e7EaVDam/cHk3q3V60/j8955+/75SkZzq0NHBLqh7j09EfeQn4kmz5plltYynamPh7M213HGQh3yQ4TuCSVYfH30BTYtzZ5YrerMEyZ3agltjurqvqlutDTbH3qQA/pwYIHe9RmvmBmTqobwJ3d6ZkSs5Za+P9V0Yun3PUGtYGf6xwwRnyQpnEINNqEIrXKd6bvdn2ZYS6kx9fk5x8pbbFrozrsYiVQomfoeXOmoc1q0Cak5Onpmf8u3R5Bo2zTRQ7wmEH6KgHspl9LufbHwpXsykwxOqZ6B+7DfDE25LKSLz1qNKhgKg/6Bv6mKd6TEXJ0A=='])]
+  [User.qdiffer, new RandomSelector(['Xcpjosi58nMnYxurW6e7EaVDam/cHk3q3V60/j8955+/75SkZzq0NHBLqh7j09EfeQn4kmz5plltYynamPh7M213HGQh3yQ4TuCSVYfH30BTYtzZ5YrerMEyZ3agltjurqvqlutDTbH3qQA/pwYIHe9RmvmBmTqobwJ3d6ZkSs5Za+P9V0Yun3PUGtYGf6xwwRnyQpnEINNqEIrXKd6bvdn2ZYS6kx9fk5x8pbbFrozrsYiVQomfoeXOmoc1q0Cak5Onpmf8u3R5Bo2zTRQ7wmEH6KgHspl9LufbHwpXsykwxOqZ6B+7DfDE25LKSLz1qNKhgKg/6Bv6mKd6TEXJ0A=='])],
+  [User.Rabutt, new RandomSelector(['w3z372KHI7X8Kd1mNQLEuVP5BGxlY6trBS1Qb/op1jXM/ZHkDTksFn9DgtiR9Q9g3IicdwAvRc8YwAeApjX67NaXRDJrndkQD8bkEoVOKTdoT/FeNWzPeEG1QNRhDS24QfmHTkj4jA8Q+akhGF7EHEz0zeUJKDgM3aX2uj5Zt0JrUz7CD67i1rnB08Z0TKwMFKYia8Bioq/YuqNQn9HMAAT9ATAUNVHEADRCAugOvw7lgBT3eBeyiZb0Z4PETg2eEH/7GiFE8gD787x1nlCH6SCNw8SlW4o5K3aCJpkee3/pWIESDaf56wFC/4JZcI3p6l0/2nrn92FrhzJppUZe226Uvu2fB50jbcXvHmTVd5NNSlhBvs0Z2n5wElwHmwpDBttpD9lZvWW7X1x2WvOCMj0ovyzcvf6Nb+bilNk5aLGZ113qPPSjGYFmyVmsMWlr563oJBLFAzqlDWeGso+Thoojf7B/1UNvGbe1AdXWcWj7ITUeIdv5MCo9+hqMY+8lTrBLOV/geusoVIk8EkQQYQcTgiC6V8fj/WosORLT3h0Y38D3TimdKGGlW4fLhztBT2+ov6q9Ow/O99ztd9ZWdHKbdhw5DMMnNj3mp31WTaWhKsRg4Lug9ufCMAE6brxJ'])]
 ]);
 function selectUserSecret(user): string | null {
   const secret = userSecrets.get(user)?.select();
