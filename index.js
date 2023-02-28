@@ -364,6 +364,9 @@ const shitBot = (async () => {
 })();
 
 bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
+  // Don't respond to commands. Too lazy to fix the onText regex.
+  if (capturedMessage[0] === '/') return;
+
   await (await shitBot).process(msg, username, capturedMessage)
 });
 
