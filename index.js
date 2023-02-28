@@ -218,6 +218,13 @@ async function getMetadata() {
   }
 }
 
+async function setCommands() {
+  await bot.setMyCommands([{
+    command: "\\mylifts",
+    description: "LIFT MORE"
+  }]);
+}
+
 bot.onText(
   /(?<lift>[a-zA-Z0-9\s]+): (?<sets>[0-9]+)x(?<reps>[0-9]+)@(?<weight>[0-9]+)/,
   async (msg, match) => {
@@ -265,7 +272,7 @@ bot.onText(
 );
 
 // TODO: fix "lift" regex, spit errors on failed posts, fix async bot msging
-bot.onText(/my lifts/,
+bot.onText(/^\\?my ?lifts$/,
   async (msg, match) => {
     // 'msg' is the received Message from Telegram
     // 'match' is the result of executing the regexp above on the text content
@@ -526,6 +533,7 @@ Command/Bot Ideas
 Promise.all([
   getMetadata(),
   getDbFileHandle().then(loadDb),
+  setCommands(),
 ])
   .then(async function([{botInfo}, db]) {
     startLinkScraper(botInfo, db)
