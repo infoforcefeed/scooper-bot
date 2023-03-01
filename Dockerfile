@@ -6,4 +6,4 @@ RUN npm install --production --silent && mv node_modules ../
 COPY . .
 RUN chown -R node /usr/src/app
 USER node
-ENTRYPOINT scooper-bot.sh "-t ${TOKEN} -u ${USER_ID} -S ${SALT}"
+ENTRYPOINT ["/bin/sh" , "-c" , "scooper-bot.sh", "-t ${TOKEN} -u ${USER_ID} -S ${SALT}"]
