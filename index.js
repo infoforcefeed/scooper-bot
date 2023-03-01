@@ -218,6 +218,13 @@ async function getMetadata() {
   }
 }
 
+async function setCommands() {
+  await bot.setMyCommands([{
+    command: "/mylifts",
+    description: "LIFT MORE"
+  }]);
+}
+
 bot.onText(
   /(?<lift>[a-zA-Z0-9\s]+): (?<sets>[0-9]+)x(?<reps>[0-9]+)@(?<weight>[0-9]+)/,
   async (msg, match) => {
@@ -243,7 +250,6 @@ bot.onText(
         const response = `YA GONNA GET SWOLE DOING ${match.groups.lift.toUpperCase()}?\r\nSETS: ${match.groups.sets}\r\nREPS: ${match.groups.reps}\r\nWEIGHT: ${match.groups.weight}`;
         bot.sendMessage(chatId, response);
       }
-
     } catch(error) {
       // console.log('Lift post error',error)
       console.log('message:', error.message)
@@ -259,13 +265,11 @@ bot.onText(
       bot.sendMessage(chatId, 'FUCK YOU WEAKLING')
       }
     }
-
-
   }
 );
 
 // TODO: fix "lift" regex, spit errors on failed posts, fix async bot msging
-bot.onText(/my lifts/,
+bot.onText(/^\/?my ?lifts(?:@scooper_bot)?$/,
   async (msg, match) => {
     // 'msg' is the received Message from Telegram
     // 'match' is the result of executing the regexp above on the text content
@@ -360,6 +364,9 @@ const shitBot = (async () => {
 })();
 
 bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
+  // Don't respond to commands. Too lazy to fix the onText regex.
+  if (capturedMessage[0] === '/') return;
+
   await (await shitBot).process(msg, username, capturedMessage)
 });
 
@@ -526,6 +533,7 @@ Command/Bot Ideas
 Promise.all([
   getMetadata(),
   getDbFileHandle().then(loadDb),
+  setCommands(),
 ])
   .then(async function([{botInfo}, db]) {
     startLinkScraper(botInfo, db)
