@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+  scooperbot:
+    image: scooperbot
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DIR=${working_dir}
+      - TOKEN=${TELEGRAM_TOKEN}
+      - USER_ID=${TELEGRAM_USER_ID}
+      - SALT=${IFF_SUBMISSION_SALT}
