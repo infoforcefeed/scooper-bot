@@ -222,6 +222,9 @@ async function setCommands() {
   await bot.setMyCommands([{
     command: "/mylifts",
     description: "LIFT MORE"
+  }, {
+    command: "/setai",
+    description: "Change AI backend for conversations."
   }]);
 }
 
@@ -368,6 +371,11 @@ bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, ca
   if (capturedMessage[0] === '/') return;
 
   await (await shitBot).process(msg, username, capturedMessage)
+});
+
+bot.onText(/^\/setai (.+)$/, async function(msg, [, backend]) {
+  const ai = (await shitBot).setAiBackend(backend);
+  await bot.sendMessage(msg.chat.id, `AI backend set to ${ai}.`);
 });
 
 bot.onText(/.*market.*/gi, function onEditableText(msg) {

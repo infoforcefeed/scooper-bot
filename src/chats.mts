@@ -6,7 +6,12 @@ import {
 } from 'node-telegram-bot-api';
 
 import {ChatGpt} from "./chat-gpt.mjs";
+import {OpenAi} from './openai.mjs';
 import {RandomSelector} from './selectors.mjs';
+
+export interface AiChat {
+  newThread(): Thread;
+}
 
 export interface Response {
   text: string;
@@ -14,7 +19,7 @@ export interface Response {
 }
 
 export interface Thread {
-  expired: boolean;
+  lastMessageTime: number;
   sendMessage(
     message: string,
     parentMessageId: string | null
@@ -44,6 +49,7 @@ enum Group {
 const PRIVATE_TYPE = 'private';
 const BOT_NAME = 'scooper_bot';
 const TROLL_BAR = 0.9;
+const CONVERSATION_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 const EXPIRATION_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const USER_ALIASES = new Map<string, User>([
   ['alaina', User.NotAWolfe],
@@ -66,16 +72,30 @@ class Conversation {
 export class ShitBot {
   private readonly _bot: TelegramBot;
   private readonly _chatGpt: ChatGpt;
+  private readonly _openai: OpenAi;
   private readonly _conversations = new Map<string, Conversation>();
   private readonly _expiring: NodeJS.Timer;
+  private _aiBackend: AiChat;
 
   constructor(options: BotOptions) {
     this._bot = options.bot;
-    this._chatGpt = new ChatGpt(options.chatGptKey);
+    this._aiBackend = this._chatGpt = new ChatGpt(options.chatGptKey);
+    this._openai = new OpenAi(options.chatGptKey)
     this._expiring = setInterval(
       () => { this._expireConversations(); },
       EXPIRATION_INTERVAL_MS
     );
+  }
+
+  setAiBackend(backend: string): string {
+    if (/chat.?gpt/i.test(backend)) {
+      this._aiBackend = this._chatGpt;
+      return 'Chat GPT';
+    } else if (/openai/i.test(backend)) {
+      this._aiBackend = this._openai;
+      return 'OpenAI';
+    }
+    return 'Unknown';
   }
 
   async process(
@@ -133,8 +153,9 @@ export class ShitBot {
   }
 
   private _expireConversations() {
-    for (const key of this._conversations.keys()) {
-      if (this._conversations.get(key)?.thread.expired) {
+    const expirationTime = Date.now() - CONVERSATION_TTL_MS;
+    for (const [key, conv] of this._conversations.entries()) {
+      if (conv.thread.lastMessageTime < expirationTime) {
         this._conversations.delete(key);
       }
     }
@@ -153,7 +174,7 @@ export class ShitBot {
   }
 
   private _newConversation(msg: TelegramMessage): Conversation {
-    const conv = new Conversation(this._chatGpt.newThread());
+    const conv = new Conversation(this._aiBackend.newThread());
     this._conversations.set(`${msg.chat.id}.${msg.message_id}`, conv);
     return conv;
   }

@@ -1,10 +1,9 @@
 import * as chatgpt from 'chatgpt';
 
-import {Thread, Response} from './chats.mjs';
+import {AiChat, Response, Thread} from './chats.mjs';
 
-const CONVERSATION_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 
-export class ChatGpt {
+export class ChatGpt implements AiChat {
   private readonly _gptApi: chatgpt.ChatGPTAPI;
 
   constructor(apiKey: string) {
@@ -18,13 +17,11 @@ export class ChatGpt {
 
 class ChatGptThread implements Thread {
   private _id: string | null = null;
-  private _expiration: number = Date.now() + CONVERSATION_TTL_MS;
+  private _lastMessageTime: number = Date.now();
 
   constructor(private readonly _chatGpt: chatgpt.ChatGPTAPI) {}
 
-  get expired(): boolean {
-    return this._expiration < Date.now();
-  }
+  get lastMessageTime(): number { return this._lastMessageTime; }
 
   async sendMessage(
     message: string,
@@ -35,7 +32,7 @@ class ChatGptThread implements Thread {
       parentMessageId
     };
     const response = await this._chatGpt.sendMessage(message, opts);
-    this._expiration = Date.now() + CONVERSATION_TTL_MS;
+    this._lastMessageTime = Date.now();
     if (!this._id) this._id = response.conversationId;
     return {
       text: response.text,
