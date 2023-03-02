@@ -360,23 +360,35 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
   bot.sendMessage(msg.chat.id, 'PIZZA TIME', opts);
 });
 
-// chatgpt
-const shitBot = (async () => {
+// AI conversations.
+(async () => {
   const {ShitBot} = await import('./src/chats.mjs')
-  return new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY})
-})();
+  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY})
 
-bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
-  // Don't respond to commands. Too lazy to fix the onText regex.
-  if (capturedMessage[0] === '/') return;
+  bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
+    // Don't respond to commands. Too lazy to fix the onText regex.
+    if (capturedMessage[0] === '/') return;
 
-  await (await shitBot).process(msg, username, capturedMessage)
-});
+    await shitBot.process(msg, username, capturedMessage)
+  })
 
-bot.onText(/^\/setai (.+)$/, async function(msg, [, backend]) {
-  const ai = (await shitBot).setAiBackend(backend);
-  await bot.sendMessage(msg.chat.id, `AI backend set to ${ai}.`);
-});
+  bot.onText(/^\/setai$/, async function(msg) {
+    bot.sendMessage(msg.chat.id, 'Select AI mode:', {
+      reply_markup: {
+        one_time_keyboard: true,
+        inline_keyboard: [
+          {text: 'openai'},
+          {text: 'chat-gpt'}
+        ]
+      }
+    })
+  })
+
+  bot.onText(/^\/setai (.+)$/, async function(msg, [, backend]) {
+    const ai = shitBot.setAiBackend(backend)
+    await bot.sendMessage(msg.chat.id, `AI backend set to ${ai}.`)
+  })
+})()
 
 bot.onText(/.*market.*/gi, function onEditableText(msg) {
   const m = Math.floor(Math.random() * 3);
