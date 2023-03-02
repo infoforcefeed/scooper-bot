@@ -372,19 +372,19 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     await shitBot.process(msg, username, capturedMessage)
   })
 
-  bot.onText(/^\/setai$/, async function(msg) {
+  bot.onText(/^\/setai(?:@\w+)?$/, async function(msg) {
     bot.sendMessage(msg.chat.id, 'Select AI mode:', {
       reply_markup: {
         one_time_keyboard: true,
-        inline_keyboard: [
+        inline_keyboard: [[
           {text: 'openai'},
           {text: 'chat-gpt'}
-        ]
+        ]]
       }
     })
   })
 
-  bot.onText(/^\/setai (.+)$/, async function(msg, [, backend]) {
+  bot.onText(/^\/setai(?:@\w+)? (.+)$/, async function(msg, [, backend]) {
     const ai = shitBot.setAiBackend(backend)
     await bot.sendMessage(msg.chat.id, `AI backend set to ${ai}.`)
   })
