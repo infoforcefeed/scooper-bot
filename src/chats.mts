@@ -10,6 +10,7 @@ import {OpenAi} from './openai.mjs';
 import {RandomSelector} from './selectors.mjs';
 
 export interface AiChat {
+  setModel(model: string): string;
   newThread(): Thread;
 }
 
@@ -87,15 +88,18 @@ export class ShitBot {
     );
   }
 
-  setAiBackend(backend: string): string {
+  setAiBackend(backend: string, model?: string): [string, string] {
+    let aiName = 'Unknown';
     if (/chat.?gpt/i.test(backend)) {
       this._aiBackend = this._chatGpt;
-      return 'Chat GPT';
+      aiName = 'Chat GPT';
     } else if (/openai/i.test(backend)) {
       this._aiBackend = this._openai;
-      return 'OpenAI';
+      aiName = 'OpenAI';
     }
-    return 'Unknown';
+    let chosenModel = 'Unknown';
+    if (model) chosenModel = this._aiBackend.setModel(model)
+    return [aiName, chosenModel];
   }
 
   async process(

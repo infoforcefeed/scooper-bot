@@ -384,9 +384,9 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     })
   })
 
-  bot.onText(/^\/setai(?:@\w+)? (.+)$/, async function(msg, [, backend]) {
-    const ai = shitBot.setAiBackend(backend)
-    await bot.sendMessage(msg.chat.id, `AI backend set to ${ai}.`)
+  bot.onText(/^\/setai(?:@\w+)? ([^\s]+)(?:\s+(.*))?$/, async function(msg, [, backend, model]) {
+    const [ai, chosenModel] = shitBot.setAiBackend(backend, model)
+    await bot.sendMessage(msg.chat.id, `AI backend set to ${ai} ${chosenModel}.`)
   })
 })()
 

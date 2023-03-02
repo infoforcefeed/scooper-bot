@@ -10,6 +10,10 @@ export class ChatGpt implements AiChat {
     this._gptApi = new chatgpt.ChatGPTAPI({apiKey});
   }
 
+  setModel(_: string): string {
+    return 'text-davinci-003'; // Can't change this model.
+  }
+
   newThread(): ChatGptThread {
     return new ChatGptThread(this._gptApi);
   }
