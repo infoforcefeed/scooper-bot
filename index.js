@@ -218,14 +218,22 @@ async function getMetadata() {
   }
 }
 
-async function setCommands() {
-  await bot.setMyCommands([{
-    command: "/mylifts",
-    description: "LIFT MORE"
-  }, {
-    command: "/setai",
-    description: "Change AI backend for conversations."
-  }]);
+function registerCommands(commands) {
+  bot.setMyCommands(commands.map((command) => ({
+    command: `/${command.command}`,
+    description: command.description
+  })))
+
+  commands.forEach((command) => {
+    bot.onText(
+      new RegExp(
+        `^/${command.command}(?:@\w+)(?:\s+${
+          command.parameters.map((param) => `(?:\s+(${param})`).join('')
+        }${command.parameters.map(() => ')?')}$`
+      ),
+      (msg, [, ...params]) => command.action(msg, ...params)
+    )
+  })
 }
 
 bot.onText(
@@ -272,43 +280,41 @@ bot.onText(
 );
 
 // TODO: fix "lift" regex, spit errors on failed posts, fix async bot msging
-bot.onText(/^\/?my ?lifts(?:@scooper_bot)?$/,
-  async (msg, match) => {
-    // 'msg' is the received Message from Telegram
-    // 'match' is the result of executing the regexp above on the text content
-    // of the message
-    const chatId = msg.chat.id;
-    const nickname = msg.from.first_name;
-    try {
-      const hello = await axios.get(`https://wheypi.shithouse.tv/api/lifts/${nickname}`);
+async function myLifts(msg) {
+  // 'msg' is the received Message from Telegram
+  // 'match' is the result of executing the regexp above on the text content
+  // of the message
+  const chatId = msg.chat.id;
+  const nickname = msg.from.first_name;
+  try {
+    const hello = await axios.get(`https://wheypi.shithouse.tv/api/lifts/${nickname}`);
 
-      if(hello.data.data.length > 0) {
-        bot.sendMessage(chatId, `HERE'S YOUR WORKOUT SCRUB:`)
-        hello.data.data.forEach(lift => {
-          bot.sendMessage(chatId, `${lift.lift}\r\nSETS ${lift.sets}\r\nREPS ${lift.reps}\r\nWEIGHT ${lift.weight}`);
-        });
-        bot.sendMessage(chatId, 'DO MORE REPS TODAY, ARE YOU FUCKING TIRED YET?')
-      } else {
-        bot.sendMessage(chatId, `WHAT DO YOU MEAN YOU DON'T HAVE A ROUTINE YET?`)
-      }
+    if(hello.data.data.length > 0) {
+      bot.sendMessage(chatId, `HERE'S YOUR WORKOUT SCRUB:`)
+      hello.data.data.forEach(lift => {
+        bot.sendMessage(chatId, `${lift.lift}\r\nSETS ${lift.sets}\r\nREPS ${lift.reps}\r\nWEIGHT ${lift.weight}`);
+      });
+      bot.sendMessage(chatId, 'DO MORE REPS TODAY, ARE YOU FUCKING TIRED YET?')
+    } else {
+      bot.sendMessage(chatId, `WHAT DO YOU MEAN YOU DON'T HAVE A ROUTINE YET?`)
+    }
 
-    } catch(error) {
-      // console.log('Lift post error',error)
-      console.log('message:', error.message)
-      console.log('code:', error.code);
-      console.log('request:', error.request);
-      console.log('isAxiosError', error.isAxiosError);
+  } catch(error) {
+    // console.log('Lift post error',error)
+    console.log('message:', error.message)
+    console.log('code:', error.code);
+    console.log('request:', error.request);
+    console.log('isAxiosError', error.isAxiosError);
 
-      // console.log('response', error.response);
-      if(error.response){
-      console.log('data', error.response.data);
-      console.log('status', error.response.status);
-      // console.log('headers', error.response.headers);
-      bot.sendMessage(chatId, 'FUCK YOU WEAKLING')
-      }
+    // console.log('response', error.response);
+    if(error.response){
+    console.log('data', error.response.data);
+    console.log('status', error.response.status);
+    // console.log('headers', error.response.headers);
+    bot.sendMessage(chatId, 'FUCK YOU WEAKLING')
     }
   }
-);
+}
 
 const pizzas = [
   {
@@ -384,10 +390,21 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     })
   })
 
-  bot.onText(/^\/setai(?:@\w+)? ([^\s]+)(?:\s+(.*))?$/, async function(msg, [, backend, model]) {
+  async function setAI(msg, backend, model) {
     const [ai, chosenModel] = shitBot.setAiBackend(backend, model)
     await bot.sendMessage(msg.chat.id, `AI backend set to ${ai} ${chosenModel}.`)
-  })
+  }
+
+  registerCommands([{
+    command: 'mylifts',
+    description: 'LIFT MORE',
+    action: myLifts
+  }, {
+    command: 'setai',
+    description: 'Change AI backend for conversations.',
+    parameters: [`[\w-]+`, `[\w-]+`],
+    action: setAI
+  }])
 })()
 
 bot.onText(/.*market.*/gi, function onEditableText(msg) {
@@ -553,7 +570,6 @@ Command/Bot Ideas
 Promise.all([
   getMetadata(),
   getDbFileHandle().then(loadDb),
-  setCommands(),
 ])
   .then(async function([{botInfo}, db]) {
     startLinkScraper(botInfo, db)
