@@ -1,17 +1,21 @@
-import {createCipheriv, createDecipheriv, createHash} from 'crypto';
+import { createCipheriv, createDecipheriv, createHash } from 'crypto';
 import * as TelegramBot from 'node-telegram-bot-api';
 import {
   Message as TelegramMessage,
   User as TelegramUser
 } from 'node-telegram-bot-api';
 
-import {ChatGpt} from "./chat-gpt.mjs";
-import {OpenAi} from './openai.mjs';
-import {RandomSelector} from './selectors.mjs';
+import { ChatGpt } from './chat-gpt.mjs';
+import { OpenAi } from './openai.mjs';
+import { RandomSelector } from './selectors.mjs';
 
 export interface AiChat {
   setModel(model: string): string;
   newThread(): Thread;
+}
+
+export interface AiImage {
+  newImage(): ImageGeneration;
 }
 
 export interface Response {
@@ -25,6 +29,16 @@ export interface Thread {
     message: string,
     parentMessageId: string | null
   ): Promise<Response>;
+}
+
+export interface ImageResponse {
+  image: string; // TODO: replace this with a buffer of the image binary.
+  messageId: string;
+}
+
+export interface ImageGeneration {
+  lastMessageTime: number;
+  generate(prompt: string): Promise<ImageResponse>;
 }
 
 interface BotOptions {
@@ -67,7 +81,7 @@ const USER_ALIASES = new Map<string, User>([
 
 class Conversation {
   public readonly messageIds = new Map<string, string>();
-  constructor(public readonly thread: Thread) {}
+  constructor(public readonly thread: Thread) { }
 }
 
 export class ShitBot {
@@ -76,12 +90,13 @@ export class ShitBot {
   private readonly _openai: OpenAi;
   private readonly _conversations = new Map<string, Conversation>();
   private readonly _expiring: NodeJS.Timer;
-  private _aiBackend: AiChat;
+  private _aiChat: AiChat;
+  private _aiImage: AiImage;
 
   constructor(options: BotOptions) {
     this._bot = options.bot;
-    this._aiBackend = this._chatGpt = new ChatGpt(options.chatGptKey);
-    this._openai = new OpenAi(options.chatGptKey)
+    this._aiChat = this._chatGpt = new ChatGpt(options.chatGptKey);
+    this._aiImage = this._openai = new OpenAi(options.chatGptKey)
     this._expiring = setInterval(
       () => { this._expireConversations(); },
       EXPIRATION_INTERVAL_MS
@@ -91,14 +106,14 @@ export class ShitBot {
   setAiBackend(backend: string, model?: string): [string, string] {
     let aiName = 'Unknown';
     if (/chat.?gpt/i.test(backend)) {
-      this._aiBackend = this._chatGpt;
+      this._aiChat = this._chatGpt;
       aiName = 'Chat GPT';
     } else if (/openai/i.test(backend)) {
-      this._aiBackend = this._openai;
+      this._aiChat = this._openai;
       aiName = 'OpenAI';
     }
     let chosenModel = 'Unknown';
-    if (model) chosenModel = this._aiBackend.setModel(model)
+    if (model) chosenModel = this._aiChat.setModel(model)
     return [aiName, chosenModel];
   }
 
@@ -107,11 +122,8 @@ export class ShitBot {
     atUser: string | null,
     text: string
   ): Promise<void> {
-    const msgKey = isPrivateMessage(msg)
-      ? (msg.reply_to_message?.message_id)
-      : msg.message_thread_id
-    const mt = `${msg.chat.id}.${msgKey}`
-    let conv = this._conversations.get(mt) || null
+    const mt = this._getMessageKey(msg);
+    let conv = this._conversations.get(mt) || null;
     if (conv || isPrivateMessage(msg) || atUser === BOT_NAME) {
       await this._processDirectMessage(conv, msg, text);
       return;
@@ -125,6 +137,21 @@ export class ShitBot {
       await this._interject(user, msg, text);
       return;
     }
+  }
+
+  async processImage(msg: TelegramMessage, prompt: string): Promise<void> {
+    // TODO: Implement image conversation threading.
+    const mt = this._getMessageKey(msg);
+    const generator = this._aiImage.newImage();
+    const { image } = await generator.generate(prompt);
+    await this._bot.sendMessage(msg.chat.id, image);
+  }
+
+  private _getMessageKey(msg: TelegramMessage): string {
+    const msgKey = isPrivateMessage(msg)
+      ? (msg.reply_to_message?.message_id)
+      : msg.message_thread_id;
+    return `${msg.chat.id}.${msgKey}`
   }
 
   private async _processDirectMessage(
@@ -178,7 +205,7 @@ export class ShitBot {
   }
 
   private _newConversation(msg: TelegramMessage): Conversation {
-    const conv = new Conversation(this._aiBackend.newThread());
+    const conv = new Conversation(this._aiChat.newThread());
     this._conversations.set(`${msg.chat.id}.${msg.message_id}`, conv);
     return conv;
   }
@@ -277,7 +304,7 @@ async function secretPretraining(
   const secret = selectSecret(key);
   if (!secret) return null;
 
-  const {messageId} =
+  const { messageId } =
     await conv.thread.sendMessage(secret, /*parentMessageId=*/null);
   return messageId;
 }

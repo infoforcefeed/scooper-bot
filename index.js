@@ -393,6 +393,10 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     await bot.sendMessage(msg.chat.id, `AI backend set to ${ai} ${chosenModel}.`)
   }
 
+  async function generateImage(msg, prompt) {
+    await shitBot.processImage(msg, prompt);
+  }
+
   registerCommands([{
     command: 'mylifts',
     description: 'LIFT MORE',
@@ -402,6 +406,11 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     description: 'Change AI backend for conversations.',
     parameters: ['[\\w-]+', '[\\w-]+'],
     action: setAI
+  }, {
+    command: 'genimage',
+    description: 'Make an image from a prompt.',
+    parameters: ['.+'],
+    action: generateImage
   }])
 })()
 
