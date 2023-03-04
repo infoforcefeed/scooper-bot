@@ -140,11 +140,29 @@ export class ShitBot {
   }
 
   async processImage(msg: TelegramMessage, prompt: string): Promise<void> {
+    if (!prompt) {
+      await this._bot.sendMessage(msg.chat.id, 'Fuck off, Rabbit!', {
+        reply_to_message_id: msg.message_id
+      });
+      return;
+    }
+
     // TODO: Implement image conversation threading.
     const mt = this._getMessageKey(msg);
     const generator = this._aiImage.newImage();
-    const { image } = await generator.generate(prompt);
-    await this._bot.sendMessage(msg.chat.id, image);
+    try {
+      const { image } = await generator.generate(prompt);
+      await this._bot.sendPhoto(msg.chat.id, image, {
+        reply_to_message_id: msg.message_id
+      });
+    } catch (e) {
+      if (e.config?.headers) delete e.config.headers;
+      await this._bot.sendMessage(
+        msg.chat.id,
+        '```\n' + JSON.stringify(e, null, 2) + '\n```',
+        { reply_to_message_id: msg.message_id, parse_mode: 'MarkdownV2' }
+      );
+    }
   }
 
   private _getMessageKey(msg: TelegramMessage): string {

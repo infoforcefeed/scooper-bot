@@ -58,13 +58,12 @@ class OpenAiThread implements Thread {
     messages.push(finalMessage);
     console.log(messages); // TODO Remove this debugging line.
 
-    const { status, data: { usage, choices } } =
+    const { data: { usage, choices } } =
       await this.openai.createChatCompletion({
         model: this.model,
         messages,
         n: 1
       });
-    _checkStatus(status);
     console.log(usage);
 
     this._history.push(choices[0].message);
@@ -89,21 +88,14 @@ class OpenAiImageGeneration implements ImageGeneration {
   async generate(prompt: string): Promise<ImageResponse> {
     // TODO: Add multi generation to allow for parallel iteration.
     // TODO: Add size selection.
-    const {status, data: {data} } = await this.openai.createImage({
+    const { data: { data } } = await this.openai.createImage({
       prompt,
       n: 1,
       size: '512x512',
       response_format: 'url'
     });
-    _checkStatus(status);
 
     // TODO: Add history to enable reply to iterate.
-    return {image: data[0].url, messageId: 'nope'};
-  }
-}
-
-function _checkStatus(status: number) {
-  if (status !== 200) {
-    throw new Error(`Open AI chat failure: ${status}`);
+    return { image: data[0].url, messageId: 'nope' };
   }
 }
