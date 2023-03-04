@@ -75,10 +75,7 @@ async function uploader(botInfo, bumps, db) {
   while(bumps.length) {
     const bump = bumps.pop()
     const i = bumps.length
-    if (seen[bump.name]) {
-      console.log('skipping ' + bump.name)
-      continue
-    }
+    if (seen[bump.name]) continue
     console.log('uploading ' + bump.name)
 
     // compute sticker set name
@@ -225,12 +222,13 @@ function registerCommands(commands) {
   })))
 
   commands.forEach((command) => {
+    command.parameters = command.parameters || []
+    const cmdRegex = `^/${command.command}(?:@\\w+)?${
+      command.parameters.map((param) => `(?:\\s+(${param})`).join('')
+    }${command.parameters.map(() => ')?').join('')}$`
+    console.log(cmdRegex)
     bot.onText(
-      new RegExp(
-        `^/${command.command}(?:@\w+)(?:\s+${
-          command.parameters.map((param) => `(?:\s+(${param})`).join('')
-        }${command.parameters.map(() => ')?')}$`
-      ),
+      new RegExp(cmdRegex),
       (msg, [, ...params]) => command.action(msg, ...params)
     )
   })
@@ -402,7 +400,7 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
   }, {
     command: 'setai',
     description: 'Change AI backend for conversations.',
-    parameters: [`[\w-]+`, `[\w-]+`],
+    parameters: ['[\\w-]+', '[\\w-]+'],
     action: setAI
   }])
 })()
