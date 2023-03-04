@@ -5,6 +5,7 @@ const Jimp = require('jimp')
 const fs = require('fs').promises
 const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
+const {Server} = require('socket.io');
 
 let fsh
 async function getDbFileHandle() {
@@ -388,13 +389,42 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     })
   })
 
+  const io = new Server();
+  const sockets = new Set();
+  io.of('/awoo').on('connection', (socket) => {
+    sockets.add(socket);
+    socket.on('disconnect', () => sockets.delete(socket));
+    socket.on('txt2img', ({image}) => console.log(image));
+    socket.emit('request', {requestId: 'foo', txt2img: {prompt: 'wolf'}});
+  });
+  io.listen(6969);
+
   async function setAI(msg, backend, model) {
     const [ai, chosenModel] = shitBot.setAiBackend(backend, model)
     await bot.sendMessage(msg.chat.id, `AI backend set to ${ai} ${chosenModel}.`)
   }
 
+  // async function generateImage(msg, prompt) {
+  //   await shitBot.processImage(msg, prompt);
+  // }
+
   async function generateImage(msg, prompt) {
-    await shitBot.processImage(msg, prompt);
+    if (sockets.size === 0) {
+      await bot.sendMessage(msg.chat.id, 'No generators connected.', {
+        reply_to_message_id: msg.message_id
+      })
+      return
+    }
+
+    const requestId = Math.random().toString()
+    const socket = sockets.values().next().value
+    socket.once(requestId, async ({image}) => {
+      const imgBuffer = Buffer.from(image, 'base64')
+      await bot.sendPhoto(msg.chat.id, imgBuffer, {
+        reply_to_message_id: msg.message_id
+      })
+    })
+    socket.emit('request', {requestId, prompt})
   }
 
   registerCommands([{
