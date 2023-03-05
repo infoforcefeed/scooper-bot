@@ -206,7 +206,7 @@ export class ShitBot {
     msg: TelegramMessage,
     prompt: string
   ): Promise<void> {
-    if (msg.reply_to_message.text) {
+    if (msg.reply_to_message?.text) {
       prompt = `${msg.reply_to_message.text}\n\n${prompt}`;
     }
 
