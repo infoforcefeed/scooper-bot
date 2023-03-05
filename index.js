@@ -394,8 +394,6 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
   io.of('/awoo').on('connection', (socket) => {
     sockets.add(socket);
     socket.on('disconnect', () => sockets.delete(socket));
-    socket.on('txt2img', ({image}) => console.log(image));
-    socket.emit('request', {requestId: 'foo', txt2img: {prompt: 'wolf'}});
   });
   io.listen(6969);
 
@@ -424,7 +422,7 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
         reply_to_message_id: msg.message_id
       })
     })
-    socket.emit('request', {requestId, prompt})
+    socket.emit('request', {requestId, txt2img: {prompt}})
   }
 
   registerCommands([{
