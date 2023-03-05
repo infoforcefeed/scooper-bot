@@ -4,7 +4,9 @@ import {
   Message as TelegramMessage,
   User as TelegramUser
 } from 'node-telegram-bot-api';
+import { Server as SocketIoServer } from 'socket.io';
 
+import { AwooAi } from './awoo.mjs';
 import { ChatGpt } from './chat-gpt.mjs';
 import { OpenAi } from './openai.mjs';
 import { RandomSelector } from './selectors.mjs';
@@ -32,18 +34,19 @@ export interface Thread {
 }
 
 export interface ImageResponse {
-  image: string; // TODO: replace this with a buffer of the image binary.
+  image: string | Buffer;
   messageId: string;
 }
 
 export interface ImageGeneration {
   lastMessageTime: number;
-  generate(prompt: string): Promise<ImageResponse>;
+  generateImage(prompt: string): Promise<ImageResponse>;
 }
 
 interface BotOptions {
   bot: TelegramBot,
   chatGptKey: string;
+  io: SocketIoServer;
 }
 
 enum User {
@@ -95,13 +98,14 @@ class Conversation {
 }
 
 function isImageConversation(conv: any): conv is ImageConversation {
-  return conv?.messageIds instanceof Map && conv.thread?.generate;
+  return conv?.messageIds instanceof Map && conv.thread?.generateImage;
 }
 
 export class ShitBot {
   private readonly _bot: TelegramBot;
   private readonly _chatGpt: ChatGpt;
   private readonly _openai: OpenAi;
+  private readonly _awoo: AwooAi;
   private readonly _conversations = new Map<string, Conversation>();
   private readonly _expiring: NodeJS.Timer;
   private _aiChat: AiChat;
@@ -110,7 +114,8 @@ export class ShitBot {
   constructor(options: BotOptions) {
     this._bot = options.bot;
     this._aiChat = this._chatGpt = new ChatGpt(options.chatGptKey);
-    this._aiImage = this._openai = new OpenAi(options.chatGptKey)
+    this._openai = new OpenAi(options.chatGptKey)
+    this._aiImage = this._awoo = new AwooAi(options.io);
     this._expiring = setInterval(
       () => { this._expireConversations(); },
       EXPIRATION_INTERVAL_MS
@@ -204,10 +209,12 @@ export class ShitBot {
 
     const generator = this._aiImage.newImage();
     try {
-      const { image } = await generator.generate(prompt);
-      await this._bot.sendPhoto(msg.chat.id, image, {
+      const { messageId, image } = await generator.generateImage(prompt);
+      const sent = await this._bot.sendPhoto(msg.chat.id, image, {
         reply_to_message_id: msg.message_id
       });
+
+      this._updateThreading(conv, msg, messageId, sent.message_id);
     } catch (e) {
       if (e.config?.headers) delete e.config.headers;
       await this._bot.sendMessage(
@@ -277,12 +284,21 @@ export class ShitBot {
       reply_to_message_id: msg.message_id
     });
 
-    conv.messageIds.set(sent.message_id.toString(), res.messageId);
+    this._updateThreading(conv, msg, res.messageId, sent.message_id);
+  }
+
+  private _updateThreading(
+    conv: Conversation,
+    msg: TelegramMessage,
+    aiMessageId: string,
+    tgMessageId: number
+  ) {
+    conv.messageIds.set(tgMessageId.toString(), aiMessageId);
 
     // Private chats don't have threads so we must manually maintain the
     // sequence.
     if (isPrivateMessage(msg)) {
-      this._conversations.set(`${msg.chat.id}.${sent.message_id}`, conv);
+      this._conversations.set(`${msg.chat.id}.${tgMessageId}`, conv);
     }
   }
 }

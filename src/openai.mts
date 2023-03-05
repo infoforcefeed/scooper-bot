@@ -85,7 +85,7 @@ class OpenAiImageGeneration implements ImageGeneration {
 
   get lastMessageTime(): number { return this._lastMessageTime; }
 
-  async generate(prompt: string): Promise<ImageResponse> {
+  async generateImage(prompt: string): Promise<ImageResponse> {
     // TODO: Add multi generation to allow for parallel iteration.
     // TODO: Add size selection.
     const { data: { data } } = await this.openai.createImage({

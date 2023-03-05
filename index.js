@@ -368,7 +368,8 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 // AI conversations.
 (async () => {
   const {ShitBot} = await import('./src/chats.mjs')
-  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY})
+  const io = new Server();
+  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY, io})
 
   bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
     // Don't respond to commands. Too lazy to fix the onText regex.
@@ -389,22 +390,14 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     })
   })
 
-  const io = new Server();
-  const sockets = new Set();
-  io.of('/awoo').on('connection', (socket) => {
-    sockets.add(socket);
-    socket.on('disconnect', () => sockets.delete(socket));
-  });
-  io.listen(6969);
-
   async function setAI(msg, backend, model) {
     const [ai, chosenModel] = shitBot.setAiBackend(backend, model)
     await bot.sendMessage(msg.chat.id, `AI backend set to ${ai} ${chosenModel}.`)
   }
 
-  // async function generateImage(msg, prompt) {
-  //   await shitBot.processImage(msg, prompt);
-  // }
+  async function generateImage(msg, prompt) {
+    await shitBot.processImage(msg, prompt);
+  }
 
   async function generateImage(msg, prompt) {
     if (sockets.size === 0) {
@@ -440,6 +433,7 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     parameters: ['.+'],
     action: generateImage
   }])
+  io.listen(6969)
 })()
 
 bot.onText(/.*market.*/gi, function onEditableText(msg) {
