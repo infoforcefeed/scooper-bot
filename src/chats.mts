@@ -79,9 +79,23 @@ const USER_ALIASES = new Map<string, User>([
   ['reblink', User.Rabutt],
 ]);
 
+interface ChatConversation {
+  messageIds: Map<string, string>;
+  thread: Thread;
+}
+
+interface ImageConversation {
+  messageIds: Map<string, string>;
+  thread: ImageGeneration;
+}
+
 class Conversation {
   public readonly messageIds = new Map<string, string>();
-  constructor(public readonly thread: Thread) { }
+  constructor(public readonly thread: Thread | ImageGeneration) { }
+}
+
+function isImageConversation(conv: any): conv is ImageConversation {
+  return conv?.messageIds instanceof Map && conv.thread?.generate;
 }
 
 export class ShitBot {
@@ -125,7 +139,11 @@ export class ShitBot {
     const mt = this._getMessageKey(msg);
     let conv = this._conversations.get(mt) || null;
     if (conv || isPrivateMessage(msg) || atUser === BOT_NAME) {
-      await this._processDirectMessage(conv, msg, text);
+      if (isImageConversation(conv)) {
+        await this._processImage(conv, msg, text);
+      } else {
+        await this._processDirectMessage(conv as ChatConversation, msg, text);
+      }
       return;
     }
 
@@ -140,15 +158,50 @@ export class ShitBot {
   }
 
   async processImage(msg: TelegramMessage, prompt: string): Promise<void> {
-    if (!prompt) {
-      await this._bot.sendMessage(msg.chat.id, 'Fuck off, Rabbit!', {
-        reply_to_message_id: msg.message_id
-      });
-      return;
+    if (msg.reply_to_message) {
+      console.log(msg.reply_to_message);
     }
 
-    // TODO: Implement image conversation threading.
     const mt = this._getMessageKey(msg);
+    let conv = this._conversations.get(mt) || null;
+    if (!isImageConversation(conv)) {
+      conv = this._newImageConverstaion(msg);
+    }
+
+    await this._processImage(conv as ImageConversation, msg, prompt);
+  }
+
+  private _getMessageKey(msg: TelegramMessage): string {
+    const msgKey = isPrivateMessage(msg)
+      ? (msg.reply_to_message?.message_id)
+      : msg.message_thread_id;
+    return `${msg.chat.id}.${msgKey}`
+  }
+
+  private async _processDirectMessage(
+    conv: ChatConversation | null,
+    msg: TelegramMessage,
+    text: string
+  ): Promise<void> {
+    let parentMessageId: string | null = null;
+    if (!conv) {
+      conv = this._newChatConversation(msg);
+      if (this._dickAround()) {
+        parentMessageId = await this._pretrain(conv, msg);
+      }
+    } else if (msg.reply_to_message) {
+      parentMessageId =
+        conv.messageIds.get(msg.reply_to_message.message_id.toString()) || null;
+    }
+    await this._replyToMessage(conv, msg, text, parentMessageId);
+  }
+
+  private async _processImage(
+    conv: ImageConversation,
+    msg: TelegramMessage,
+    prompt: string
+  ): Promise<void> {
+
     const generator = this._aiImage.newImage();
     try {
       const { image } = await generator.generate(prompt);
@@ -165,37 +218,12 @@ export class ShitBot {
     }
   }
 
-  private _getMessageKey(msg: TelegramMessage): string {
-    const msgKey = isPrivateMessage(msg)
-      ? (msg.reply_to_message?.message_id)
-      : msg.message_thread_id;
-    return `${msg.chat.id}.${msgKey}`
-  }
-
-  private async _processDirectMessage(
-    conv: Conversation | null,
-    msg: TelegramMessage,
-    text: string
-  ): Promise<void> {
-    let parentMessageId: string | null = null;
-    if (!conv) {
-      conv = this._newConversation(msg);
-      if (this._dickAround()) {
-        parentMessageId = await this._pretrain(conv, msg);
-      }
-    } else if (msg.reply_to_message) {
-      parentMessageId =
-        conv.messageIds.get(msg.reply_to_message.message_id.toString()) || null;
-    }
-    await this._replyToMessage(conv, msg, text, parentMessageId);
-  }
-
   private _dickAround(): boolean {
     return Math.random() > TROLL_BAR;
   }
 
   private async _pretrain(
-    conv: Conversation,
+    conv: ChatConversation,
     msg: TelegramMessage,
   ): Promise<string | null> {
     return await secretPretraining(conv, msg.chat.id.toString());
@@ -217,19 +245,29 @@ export class ShitBot {
   ): Promise<void> {
     const training = selectUserSecret(user);
     if (training) {
-      const conv = this._newConversation(msg);
+      const conv = this._newChatConversation(msg);
       await this._replyToMessage(conv, msg, training, /*parentMessageId=*/null);
     }
   }
 
-  private _newConversation(msg: TelegramMessage): Conversation {
+  private _newChatConversation(msg: TelegramMessage): ChatConversation {
     const conv = new Conversation(this._aiChat.newThread());
-    this._conversations.set(`${msg.chat.id}.${msg.message_id}`, conv);
-    return conv;
+    this._conversations.set(this._conversationKey(msg), conv);
+    return conv as ChatConversation;
+  }
+
+  private _newImageConverstaion(msg: TelegramMessage): ImageConversation {
+    const conv = new Conversation(this._aiImage.newImage());
+    this._conversations.set(this._conversationKey(msg), conv);
+    return conv as ImageConversation;
+  }
+
+  private _conversationKey(msg: TelegramMessage): string {
+    return `${msg.chat.id}.${msg.message_id}`;
   }
 
   private async _replyToMessage(
-    conv: Conversation,
+    conv: ChatConversation,
     msg: TelegramMessage,
     text: string,
     parentMessageId: string | null
@@ -316,7 +354,7 @@ export function encode(key, msg) {
 }
 
 async function secretPretraining(
-  conv: Conversation,
+  conv: ChatConversation,
   key: string
 ): Promise<string | null> {
   const secret = selectSecret(key);
