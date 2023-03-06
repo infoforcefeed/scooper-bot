@@ -1,17 +1,23 @@
-import {createCipheriv, createDecipheriv, createHash} from 'crypto';
+import { createCipheriv, createDecipheriv, createHash } from 'crypto';
 import * as TelegramBot from 'node-telegram-bot-api';
 import {
   Message as TelegramMessage,
   User as TelegramUser
 } from 'node-telegram-bot-api';
+import { Server as SocketIoServer } from 'socket.io';
 
-import {ChatGpt} from "./chat-gpt.mjs";
-import {OpenAi} from './openai.mjs';
-import {RandomSelector} from './selectors.mjs';
+import { AwooAi } from './awoo.mjs';
+import { ChatGpt } from './chat-gpt.mjs';
+import { OpenAi } from './openai.mjs';
+import { RandomSelector } from './selectors.mjs';
 
 export interface AiChat {
   setModel(model: string): string;
   newThread(): Thread;
+}
+
+export interface AiImage {
+  newImage(): ImageGeneration;
 }
 
 export interface Response {
@@ -27,9 +33,20 @@ export interface Thread {
   ): Promise<Response>;
 }
 
+export interface ImageResponse {
+  image: string | Buffer;
+  messageId: string;
+}
+
+export interface ImageGeneration {
+  lastMessageTime: number;
+  generateImage(prompt: string): Promise<ImageResponse>;
+}
+
 interface BotOptions {
   bot: TelegramBot,
   chatGptKey: string;
+  io: SocketIoServer;
 }
 
 enum User {
@@ -65,23 +82,40 @@ const USER_ALIASES = new Map<string, User>([
   ['reblink', User.Rabutt],
 ]);
 
+interface ChatConversation {
+  messageIds: Map<string, string>;
+  thread: Thread;
+}
+
+interface ImageConversation {
+  messageIds: Map<string, string>;
+  thread: ImageGeneration;
+}
+
 class Conversation {
   public readonly messageIds = new Map<string, string>();
-  constructor(public readonly thread: Thread) {}
+  constructor(public readonly thread: Thread | ImageGeneration) { }
+}
+
+function isImageConversation(conv: any): conv is ImageConversation {
+  return conv?.messageIds instanceof Map && conv.thread?.generateImage;
 }
 
 export class ShitBot {
   private readonly _bot: TelegramBot;
   private readonly _chatGpt: ChatGpt;
   private readonly _openai: OpenAi;
+  private readonly _awoo: AwooAi;
   private readonly _conversations = new Map<string, Conversation>();
   private readonly _expiring: NodeJS.Timer;
-  private _aiBackend: AiChat;
+  private _aiChat: AiChat;
+  private _aiImage: AiImage;
 
   constructor(options: BotOptions) {
     this._bot = options.bot;
-    this._aiBackend = this._chatGpt = new ChatGpt(options.chatGptKey);
+    this._aiChat = this._chatGpt = new ChatGpt(options.chatGptKey);
     this._openai = new OpenAi(options.chatGptKey)
+    this._aiImage = this._awoo = new AwooAi(options.io);
     this._expiring = setInterval(
       () => { this._expireConversations(); },
       EXPIRATION_INTERVAL_MS
@@ -91,14 +125,14 @@ export class ShitBot {
   setAiBackend(backend: string, model?: string): [string, string] {
     let aiName = 'Unknown';
     if (/chat.?gpt/i.test(backend)) {
-      this._aiBackend = this._chatGpt;
+      this._aiChat = this._chatGpt;
       aiName = 'Chat GPT';
     } else if (/openai/i.test(backend)) {
-      this._aiBackend = this._openai;
+      this._aiChat = this._openai;
       aiName = 'OpenAI';
     }
     let chosenModel = 'Unknown';
-    if (model) chosenModel = this._aiBackend.setModel(model)
+    if (model) chosenModel = this._aiChat.setModel(model)
     return [aiName, chosenModel];
   }
 
@@ -107,13 +141,14 @@ export class ShitBot {
     atUser: string | null,
     text: string
   ): Promise<void> {
-    const msgKey = isPrivateMessage(msg)
-      ? (msg.reply_to_message?.message_id)
-      : msg.message_thread_id
-    const mt = `${msg.chat.id}.${msgKey}`
-    let conv = this._conversations.get(mt) || null
+    const mt = this._getMessageKey(msg);
+    let conv = this._conversations.get(mt) || null;
     if (conv || isPrivateMessage(msg) || atUser === BOT_NAME) {
-      await this._processDirectMessage(conv, msg, text);
+      if (isImageConversation(conv)) {
+        await this._processImage(conv, msg, text);
+      } else {
+        await this._processDirectMessage(conv as ChatConversation, msg, text);
+      }
       return;
     }
 
@@ -127,14 +162,35 @@ export class ShitBot {
     }
   }
 
+  async processImage(msg: TelegramMessage, prompt: string): Promise<void> {
+    if (msg.reply_to_message) {
+      console.log(msg.reply_to_message);
+    }
+
+    const mt = this._getMessageKey(msg);
+    let conv = this._conversations.get(mt) || null;
+    if (!isImageConversation(conv)) {
+      conv = this._newImageConverstaion(msg);
+    }
+
+    await this._processImage(conv as ImageConversation, msg, prompt);
+  }
+
+  private _getMessageKey(msg: TelegramMessage): string {
+    const msgKey = isPrivateMessage(msg)
+      ? (msg.reply_to_message?.message_id)
+      : msg.message_thread_id;
+    return `${msg.chat.id}.${msgKey}`
+  }
+
   private async _processDirectMessage(
-    conv: Conversation | null,
+    conv: ChatConversation | null,
     msg: TelegramMessage,
     text: string
   ): Promise<void> {
     let parentMessageId: string | null = null;
     if (!conv) {
-      conv = this._newConversation(msg);
+      conv = this._newChatConversation(msg);
       if (this._dickAround()) {
         parentMessageId = await this._pretrain(conv, msg);
       }
@@ -145,12 +201,39 @@ export class ShitBot {
     await this._replyToMessage(conv, msg, text, parentMessageId);
   }
 
+  private async _processImage(
+    conv: ImageConversation,
+    msg: TelegramMessage,
+    prompt: string
+  ): Promise<void> {
+    if (msg.reply_to_message?.text) {
+      prompt = `${msg.reply_to_message.text}\n\n${prompt}`;
+    }
+
+    const generator = this._aiImage.newImage();
+    try {
+      const { messageId, image } = await generator.generateImage(prompt);
+      const sent = await this._bot.sendPhoto(msg.chat.id, image, {
+        reply_to_message_id: msg.message_id
+      });
+
+      this._updateThreading(conv, msg, messageId, sent.message_id);
+    } catch (e) {
+      if (e.config?.headers) delete e.config.headers;
+      await this._bot.sendMessage(
+        msg.chat.id,
+        '```\n' + JSON.stringify(e, null, 2) + '\n```',
+        { reply_to_message_id: msg.message_id, parse_mode: 'MarkdownV2' }
+      );
+    }
+  }
+
   private _dickAround(): boolean {
     return Math.random() > TROLL_BAR;
   }
 
   private async _pretrain(
-    conv: Conversation,
+    conv: ChatConversation,
     msg: TelegramMessage,
   ): Promise<string | null> {
     return await secretPretraining(conv, msg.chat.id.toString());
@@ -172,19 +255,29 @@ export class ShitBot {
   ): Promise<void> {
     const training = selectUserSecret(user);
     if (training) {
-      const conv = this._newConversation(msg);
+      const conv = this._newChatConversation(msg);
       await this._replyToMessage(conv, msg, training, /*parentMessageId=*/null);
     }
   }
 
-  private _newConversation(msg: TelegramMessage): Conversation {
-    const conv = new Conversation(this._aiBackend.newThread());
-    this._conversations.set(`${msg.chat.id}.${msg.message_id}`, conv);
-    return conv;
+  private _newChatConversation(msg: TelegramMessage): ChatConversation {
+    const conv = new Conversation(this._aiChat.newThread());
+    this._conversations.set(this._conversationKey(msg), conv);
+    return conv as ChatConversation;
+  }
+
+  private _newImageConverstaion(msg: TelegramMessage): ImageConversation {
+    const conv = new Conversation(this._aiImage.newImage());
+    this._conversations.set(this._conversationKey(msg), conv);
+    return conv as ImageConversation;
+  }
+
+  private _conversationKey(msg: TelegramMessage): string {
+    return `${msg.chat.id}.${msg.message_id}`;
   }
 
   private async _replyToMessage(
-    conv: Conversation,
+    conv: ChatConversation,
     msg: TelegramMessage,
     text: string,
     parentMessageId: string | null
@@ -194,12 +287,21 @@ export class ShitBot {
       reply_to_message_id: msg.message_id
     });
 
-    conv.messageIds.set(sent.message_id.toString(), res.messageId);
+    this._updateThreading(conv, msg, res.messageId, sent.message_id);
+  }
+
+  private _updateThreading(
+    conv: Conversation,
+    msg: TelegramMessage,
+    aiMessageId: string,
+    tgMessageId: number
+  ) {
+    conv.messageIds.set(tgMessageId.toString(), aiMessageId);
 
     // Private chats don't have threads so we must manually maintain the
     // sequence.
     if (isPrivateMessage(msg)) {
-      this._conversations.set(`${msg.chat.id}.${sent.message_id}`, conv);
+      this._conversations.set(`${msg.chat.id}.${tgMessageId}`, conv);
     }
   }
 }
@@ -271,13 +373,13 @@ export function encode(key, msg) {
 }
 
 async function secretPretraining(
-  conv: Conversation,
+  conv: ChatConversation,
   key: string
 ): Promise<string | null> {
   const secret = selectSecret(key);
   if (!secret) return null;
 
-  const {messageId} =
+  const { messageId } =
     await conv.thread.sendMessage(secret, /*parentMessageId=*/null);
   return messageId;
 }

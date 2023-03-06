@@ -5,6 +5,7 @@ const Jimp = require('jimp')
 const fs = require('fs').promises
 const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
+const {Server} = require('socket.io');
 
 let fsh
 async function getDbFileHandle() {
@@ -367,7 +368,8 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 // AI conversations.
 (async () => {
   const {ShitBot} = await import('./src/chats.mjs')
-  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY})
+  const io = new Server();
+  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY, io})
 
   bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
     // Don't respond to commands. Too lazy to fix the onText regex.
@@ -393,6 +395,10 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     await bot.sendMessage(msg.chat.id, `AI backend set to ${ai} ${chosenModel}.`)
   }
 
+  async function generateImage(msg, prompt) {
+    await shitBot.processImage(msg, prompt);
+  }
+
   registerCommands([{
     command: 'mylifts',
     description: 'LIFT MORE',
@@ -402,7 +408,13 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     description: 'Change AI backend for conversations.',
     parameters: ['[\\w-]+', '[\\w-]+'],
     action: setAI
+  }, {
+    command: 'genimage',
+    description: 'Make an image from a prompt.',
+    parameters: ['.+'],
+    action: generateImage
   }])
+  io.listen(6969)
 })()
 
 bot.onText(/.*market.*/gi, function onEditableText(msg) {
