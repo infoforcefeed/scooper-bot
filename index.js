@@ -399,25 +399,6 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     await shitBot.processImage(msg, prompt);
   }
 
-  async function generateImage(msg, prompt) {
-    if (sockets.size === 0) {
-      await bot.sendMessage(msg.chat.id, 'No generators connected.', {
-        reply_to_message_id: msg.message_id
-      })
-      return
-    }
-
-    const requestId = Math.random().toString()
-    const socket = sockets.values().next().value
-    socket.once(requestId, async ({image}) => {
-      const imgBuffer = Buffer.from(image, 'base64')
-      await bot.sendPhoto(msg.chat.id, imgBuffer, {
-        reply_to_message_id: msg.message_id
-      })
-    })
-    socket.emit('request', {requestId, txt2img: {prompt}})
-  }
-
   registerCommands([{
     command: 'mylifts',
     description: 'LIFT MORE',
