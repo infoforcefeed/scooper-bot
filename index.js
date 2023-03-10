@@ -412,8 +412,6 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     await shitBot.processImage(msg, prompt);
   }
 
-
-
   registerCommands([{
     command: 'mylifts',
     description: 'LIFT MORE',
