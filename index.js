@@ -315,6 +315,19 @@ async function myLifts(msg) {
   }
 }
 
+const punk = [
+  'https://www.youtube.com/watch?v=hrkuo0y8gMU',
+  'https://www.youtube.com/watch?v=aa3Afg3fzAQ',
+  'https://www.youtube.com/watch?v=iVuB1ZASrGw',
+  'https://www.youtube.com/watch?v=3NZGbD236fw'
+
+]
+
+async function genPunk(msg) {
+  const chatId = msg.chat.id
+  bot.sendMessage(chatId, punk[punk.length * Math.random() | 0])
+}
+
 const pizzas = [
   {
     text: 'BASSBOOSTED',
@@ -413,6 +426,10 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     description: 'Make an image from a prompt.',
     parameters: ['.+'],
     action: generateImage
+  }, {
+    command: 'punk',
+    description: 'MAKE NOISE',
+    action: genPunk
   }])
   io.listen(6969)
 })()
