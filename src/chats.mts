@@ -157,8 +157,12 @@ export class ShitBot {
     const user = (atUser && toUser(atUser)) || findUser(text);
     if (user) {
       console.log(`Interjecting about ${User[user]} (${user})`);
-      await this._interject(user, msg, text);
+      await this._interject(selectUserSecret(user), msg, text);
       return;
+    }
+
+    if (/[A2ufm]{5,}/i.test(text)) {
+      await this._interject(decode('fmuf2', AAAAAA), msg, text);
     }
   }
 
@@ -249,11 +253,10 @@ export class ShitBot {
   }
 
   private async _interject(
-    user: User,
+    training: string | null,
     msg: TelegramMessage,
     text: string
   ): Promise<void> {
-    const training = selectUserSecret(user);
     if (training) {
       const conv = this._newChatConversation(msg);
       await this._replyToMessage(conv, msg, training, /*parentMessageId=*/null);
@@ -368,8 +371,16 @@ function decrypt(keyStr: string, message: string) {
   );
 }
 
-export function encode(key, msg) {
+export function encode(key: any, msg: any) {
   return encrypt(key.toString(), JSON.stringify(msg))
+}
+
+function decode(key: any, msg: string): any | null {
+  try {
+    return JSON.parse(decrypt(key.toString(), msg));
+  } catch (e) {
+    return null;
+  }
 }
 
 async function secretPretraining(
@@ -412,3 +423,5 @@ function selectUserSecret(user): string | null {
     return null;
   }
 }
+
+const AAAAAA = 'm1yOf2EGn3TY2WtxfIwI7OeNO0BVdFLvF5ffWvNAfao39EEqLU/qOmjoqTkxgFJb';
