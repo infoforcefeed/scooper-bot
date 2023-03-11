@@ -211,7 +211,7 @@ export class ShitBot {
     prompt: string
   ): Promise<void> {
     if (msg.reply_to_message?.text) {
-      prompt = `${msg.reply_to_message.text}\n\n${prompt}`;
+      prompt = `${msg.reply_to_message.text}\n\n${prompt || ''}`;
     }
 
     const generator = this._aiImage.newImage();

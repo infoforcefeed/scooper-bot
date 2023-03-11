@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { Server, Socket } from 'socket.io';
 
 import { AiImage, ImageGeneration, ImageResponse } from './chats.mjs';
