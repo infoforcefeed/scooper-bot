@@ -66,7 +66,7 @@ enum Group {
 
 const PRIVATE_TYPE = 'private';
 const BOT_NAME = 'scooper_bot';
-const TROLL_BAR = 0.9;
+const TROLL_BAR = 0.95;
 const CONVERSATION_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 const EXPIRATION_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const USER_ALIASES = new Map<string, User>([
