@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { createCipheriv, createDecipheriv, createHash } from 'crypto';
 import * as TelegramBot from 'node-telegram-bot-api';
 import {
@@ -18,6 +19,7 @@ export interface AiChat {
 
 export interface AiImage {
   newImage(): ImageGeneration;
+  updateEmbedding(embeddingName: string, image: Buffer): Promise<void>;
 }
 
 export interface Response {
@@ -180,6 +182,23 @@ export class ShitBot {
     await this._processImage(conv as ImageConversation, msg, prompt);
   }
 
+  async processSticker(msg: TelegramMessage): Promise<void> {
+    if (msg.reply_to_message?.photo?.length) {
+      let photo = msg.reply_to_message.photo[0];
+      for (const p of msg.reply_to_message.photo) {
+        if (p.width > photo.width) photo = p; // Girthy.
+      }
+      await this._updateEmbedding(
+        this._getEmbeddingName(msg.chat.id, msg.sticker.emoji),
+        photo.file_id
+      );
+      await this._bot.sendMessage(msg.chat.id, msg.sticker.emoji, {
+        reply_to_message_id: msg.message_id
+      });
+      return;
+    }
+  }
+
   private _getMessageKey(msg: TelegramMessage): string {
     const msgKey = isPrivateMessage(msg)
       ? (msg.reply_to_message?.message_id)
@@ -306,6 +325,19 @@ export class ShitBot {
     if (isPrivateMessage(msg)) {
       this._conversations.set(`${msg.chat.id}.${tgMessageId}`, conv);
     }
+  }
+
+  private _getEmbeddingName(chatId: number, emoji: string): string {
+    return `shitbot-embedding-${chatId}-${emoji}`;
+  }
+
+  private async _updateEmbedding(embeddingName: string, fileId: string) {
+    const imageLink = await this._bot.getFileLink(fileId);
+    const {data} = await axios.default.get<ArrayBuffer>(
+      imageLink,
+      {responseType: 'arraybuffer'}
+    );
+    await this._aiImage.updateEmbedding(embeddingName, Buffer.from(data));
   }
 }
 

@@ -393,6 +393,10 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     await shitBot.process(msg, username, capturedMessage)
   })
 
+  bot.on('sticker', async (msg) => {
+    await shitBot.processSticker(msg)
+  })
+
   bot.onText(/^\/setai(?:@\w+)?$/, async function(msg) {
     bot.sendMessage(msg.chat.id, 'Select AI mode:', {
       reply_markup: {
