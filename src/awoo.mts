@@ -18,12 +18,16 @@ export class AwooAi implements AiImage {
     return new AwooImage(this._pickSocket());
   }
 
-  updateEmbedding(embeddingName: string, image: Buffer): Promise<void> {
+  updateEmbedding(
+    embeddingName: string,
+    image: Buffer,
+    ext: string
+  ): Promise<void> {
     const socket = this._pickSocket();
     const requestId = `updateEmbedding-${Math.random()}`;
     socket.emit(
       'updateEmbedding',
-      {requestId, embeddingName, image: image.toString('base64')}
+      {requestId, embeddingName, image: image.toString('base64'), ext}
     );
     return new Promise((resolve) => {
       socket.once(requestId, () => resolve());

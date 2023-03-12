@@ -5,6 +5,7 @@ import {
   Message as TelegramMessage,
   User as TelegramUser
 } from 'node-telegram-bot-api';
+import { extname } from 'path';
 import { Server as SocketIoServer } from 'socket.io';
 
 import { AwooAi } from './awoo.mjs';
@@ -19,7 +20,11 @@ export interface AiChat {
 
 export interface AiImage {
   newImage(): ImageGeneration;
-  updateEmbedding(embeddingName: string, image: Buffer): Promise<void>;
+  updateEmbedding(
+    embeddingName: string,
+    image: Buffer,
+    ext: string
+  ): Promise<void>;
 }
 
 export interface Response {
@@ -337,7 +342,11 @@ export class ShitBot {
       imageLink,
       {responseType: 'arraybuffer'}
     );
-    await this._aiImage.updateEmbedding(embeddingName, Buffer.from(data));
+    await this._aiImage.updateEmbedding(
+      embeddingName,
+      Buffer.from(data),
+      extname(imageLink)
+    );
   }
 }
 
