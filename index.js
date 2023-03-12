@@ -5,7 +5,7 @@ const Jimp = require('jimp')
 const fs = require('fs').promises
 const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
-const {Server} = require('socket.io');
+const {Server} = require('socket.io')
 
 let fsh
 async function getDbFileHandle() {
@@ -319,8 +319,10 @@ const punk = [
   'https://www.youtube.com/watch?v=hrkuo0y8gMU',
   'https://www.youtube.com/watch?v=aa3Afg3fzAQ',
   'https://www.youtube.com/watch?v=iVuB1ZASrGw',
-  'https://www.youtube.com/watch?v=3NZGbD236fw'
-
+  'https://www.youtube.com/watch?v=3NZGbD236fw',
+  'https://www.youtube.com/watch?v=--p34RKclbA',
+  'https://www.youtube.com/watch?v=gLbfm-gcoGs',
+  'https://www.youtube.com/watch?v=mesnQSJmSHA',
 ]
 
 async function genPunk(msg) {
