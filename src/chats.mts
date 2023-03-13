@@ -54,6 +54,7 @@ interface BotOptions {
   bot: TelegramBot,
   chatGptKey: string;
   io: SocketIoServer;
+  emojiMap: object;
 }
 
 enum User {
@@ -110,6 +111,7 @@ function isImageConversation(conv: any): conv is ImageConversation {
 
 export class ShitBot {
   private readonly _bot: TelegramBot;
+  private readonly _emojiMap: object;
   private readonly _chatGpt: ChatGpt;
   private readonly _openai: OpenAi;
   private readonly _awoo: AwooAi;
@@ -120,6 +122,7 @@ export class ShitBot {
 
   constructor(options: BotOptions) {
     this._bot = options.bot;
+    this._emojiMap = options.emojiMap;
     this._aiChat = this._chatGpt = new ChatGpt(options.chatGptKey);
     this._openai = new OpenAi(options.chatGptKey)
     this._aiImage = this._awoo = new AwooAi(options.io);
@@ -333,7 +336,7 @@ export class ShitBot {
   }
 
   private _getEmbeddingName(chatId: number, emoji: string): string {
-    return `shitbot-embedding-${chatId}-${emoji}`;
+    return `shitbot-embedding-${chatId}-${this._emojiMap[emoji].slug}`;
   }
 
   private async _updateEmbedding(embeddingName: string, fileId: string) {

@@ -3,7 +3,8 @@
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node16",
-    "target": "ES6"
+    "target": "ES6",
+    "resolveJsonModule": true
   },
   "include": ["./src/**/*"]
 }

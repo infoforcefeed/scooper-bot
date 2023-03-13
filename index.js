@@ -6,6 +6,7 @@ const fs = require('fs').promises
 const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
 const {Server} = require('socket.io')
+const emojiMap = require('unicode-emoji-json/data-by-emoji.json')
 
 let fsh
 async function getDbFileHandle() {
@@ -384,7 +385,7 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 (async () => {
   const {ShitBot} = await import('./src/chats.mjs')
   const io = new Server();
-  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY, io})
+  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY, io, emojiMap})
 
   bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
     // Don't respond to commands. Too lazy to fix the onText regex.
