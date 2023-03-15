@@ -2,7 +2,7 @@
   "scripts": {
     "compile": "tsc",
     "start": "ts-node index.js",
-    "mon": "nodemon --exec npm start"
+    "mon": "nodemon"
   },
   "dependencies": {
     "@types/node": "^18.14.0",

@@ -336,7 +336,7 @@ export class ShitBot {
   }
 
   private _getEmbeddingName(chatId: number, emoji: string): string {
-    return `shitbot-embedding-${chatId}-${this._emojiMap[emoji].slug}`;
+    return `shitbot-embedding-${chatId}-${this._emojiMap[emoji]?.slug || 'unknown'}`;
   }
 
   private async _updateEmbedding(embeddingName: string, fileId: string) {
