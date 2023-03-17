@@ -3,3 +3,5 @@ bump-db.json
 src/**/*.js
 src/**/*.mjs
 .vscode
+/config.json
+.env
