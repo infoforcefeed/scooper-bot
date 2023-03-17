@@ -1,4 +1,4 @@
-const { Client, IntentsBitField, Message } = require('discord.js');
+const { Client, IntentsBitField } = require('discord.js');
 const { token } = require('./config.json');
 const { Server } = require('socket.io')
 const { EventEmitter } = require("node:events");
@@ -32,12 +32,6 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
         if (message.mentions.has(client.user.id)) {
             et.emit('msg', message);
             console.log(`discord api emitted ${message}, ${client.user.id}`)
-            await et.on('result', (message) => {
-                client.on('messageCreate', async (msg) => {
-                    msg.reply(`${message.text}`);
-                });
-
-            })
         }
     });
 
@@ -73,21 +67,29 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
             } else if (discoBot.reply_to_message) {
                 parentMessageId = conv.messageIds.get(discoGram.reply_to_message.message_id.toString()) || null;
             }
-            let res = await discoBot._replyToMessage(conv, discoGram, capturedMessage, parentMessageId);
+            async function replyToMessageWrapper(discoBot, conv, discoGram, capturedMessage, parentMessageId) {
+                try {
+                    await discoBot._replyToMessage(conv, discoGram, capturedMessage, parentMessageId);
+                } catch (err) {
+                    if (err.response && err.response.statusCode === 400) {
+                        console.log('Ignoring telegram 404 error')
+                    } else {
+                        throw err;
+                    }
+                }
+            }
+            let res = await replyToMessageWrapper(discoBot, conv, discoGram, capturedMessage, parentMessageId);
 
-            et.emit('result', res);
+            et.emit('result', { res });
 
         }
-
     });
 
-    // // send reply to discord api
-    // et.on('result', async (message) => {
-    //     const message = await client.channels.cache.get(reply.chat.id).messages.fetch(reply.message_id);
-    //     message.reply(`${message.text}`);
+    // listen for shitbot api response
+    et.on('result', async (res) => {
+        console.log(`made it to discord with res:${res}`)
 
-
-    // });
+    });
 
 })();
 
