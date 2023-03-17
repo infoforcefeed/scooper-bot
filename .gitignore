@@ -5,3 +5,4 @@ src/**/*.mjs
 .vscode
 /config.json
 .env
+*.code-workspace
