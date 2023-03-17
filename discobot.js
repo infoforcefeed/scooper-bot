@@ -2,7 +2,7 @@ const { Client, IntentsBitField, Message } = require('discord.js');
 const { token } = require('./config.json');
 const { Server } = require('socket.io')
 const { EventEmitter } = require("node:events");
-const TelegramBot = require('node-telegram-bot-api')
+const TelegramBot = require('node-telegram-bot-api');
 
 const client = new Client({
     intents: [
@@ -12,17 +12,18 @@ const client = new Client({
         IntentsBitField.Flags.MessageContent]
 });
 
+const et = new EventEmitter();
+const io = new Server();
+const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 
 (async () => {
     const { ShitBot } = await import('./src/chats.mjs');
+    const discoBot = new ShitBot({ bot, chatGptKey: process.env.OPENAI_API_KEY, io });
     //const { ChatGPTAPI } = await import('chatgpt');
     // const api = new ChatGPTAPI({
     //     apiKey: openapikey,
     // });
-    const et = new EventEmitter();
-    const io = new Server();
-    const discoBot = new ShitBot({ client, chatGptKey: process.env.OPENAI_API_KEY, io });
-    const bot = new TelegramBot();
+
 
     console.log(discoBot);
 
@@ -36,32 +37,50 @@ const client = new Client({
         if (message.author.bot) return; // Ignore messages from bots
 
         if (message.mentions.has(client.user.id)) {
-            et.emit('message', message);
-            console.log("made it to messageCreate")
+            et.emit('msg', message, client.user.id, bot);
+            console.log(`discord api emitted ${message}, ${client.user.id}`)
         }
     });
 
-    // send event to shitpot api for 
+    // send event to shitpot api with message
 
-    et.on('message', async (message) => {
-        console.log(`made it to message:${message}`)
 
-        let shitPro = await bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function (msg, [, username, capturedMessage]) {
+    et.on('msg', async (message) => {
+        console.log(`made it to shitbot with message:${message}`)
+
+        const regx = /^(?:@([^\s]+)\s)?((?:.|\n)+)$/m.exec(message);
+        if (regx) {
+            const capturedMessage = regx[2];
             if (capturedMessage[0] === '/') return;
+            console.log('OnText')
 
-            await discoBot.process(msg, username, capturedMessage)
-        });
+            const discoGram = {
+                message_id: message.id,
+                from: {
+                    id: message.author.id,
+                    first_name: message.author.username,
+                },
+                chat: {
+                    id: message.channel.id,
+                    type: 'group',
+                },
+                date: message.createdTimestamp / 1000,
+                text: capturedMessage,
+            };
 
-        et.emit('reply', shitPro);
+            const processed = await discoBot.process(discoGram, client.user.id, capturedMessage);
+
+            et.emit('result', processed, message);
+        }
 
     });
 
     // send reply to discord api
-    // et.on('reply', async (rep) => {
-    //     console.log(`REPLY: ${rep}`)
-    //     let res = await rep.reply(msg);
-    //     msg.reply(`${res.text}`);
-    // });
+    et.on('result', async (processed, message) => {
+        console.log('why god', processed, message.content);
+
+
+    });
 
 })();
 
