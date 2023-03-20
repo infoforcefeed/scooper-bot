@@ -1,97 +1,43 @@
-const { Client, IntentsBitField } = require('discord.js');
-const { token } = require('./config.json');
-const { Server } = require('socket.io')
 const { EventEmitter } = require("node:events");
 const TelegramBot = require('node-telegram-bot-api');
+const { IntentsBitField, Client } = require('discord.js');
 
-const client = new Client({
-    intents: [
-        IntentsBitField.Flags.Guilds,
-        IntentsBitField.Flags.GuildMembers,
-        IntentsBitField.Flags.GuildMessages,
-        IntentsBitField.Flags.MessageContent]
-});
-
-const et = new EventEmitter();
-const io = new Server();
-const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 
 (async () => {
     const { ShitBot } = await import('./src/chats.mjs');
-    const discoBot = new ShitBot({ bot, chatGptKey: process.env.OPENAI_API_KEY, io });
+    const { Server } = await import('socket.io')
 
-    client.on('ready', () => {
-        console.log(`Logged in as ${client.user.tag}!`);
-    });
-    // discord api listens for messageCreate
-    // emit if client is a user.
+    const chatId = '1081600367307010120'; // Replace with the ID of the Discord channel you want to send the message to
+    const message = 'Hello, Discord!'; // Replace with the message you want to send
 
-    client.on('messageCreate', async (message) => {
-        if (message.author.bot) return; // Ignore messages from bots
+    const { DiscoClient } = await import('./disco.js');
+    const shitbot = new ShitBot({ bot: client, chatGptKey: process.env.OPENAI_API_KEY, io: Server });
 
-        if (message.mentions.has(client.user.id)) {
-            et.emit('msg', message);
-            console.log(`discord api emitted ${message}, ${client.user.id}`)
-        }
-    });
 
-    // send event to shitbot api with message
-    et.on('msg', async (message) => {
-        console.log(`made it to shitbot with message:${message}`)
+    const options = {
+        bot: shitbot,
+        chatGptKey: 'myChatGptKey',
+        io: Server,
+    };
 
-        const regx = /^(?:@([^\s]+)\s)?((?:.|\n)+)$/m.exec(message);
-        if (regx) {
-            const capturedMessage = regx[2];
-            if (capturedMessage[0] === '/') return;
-            console.log('OnText')
+    const client = new DiscoClient({ options: options, chatGptKey: process.env.OPENAI_API_KEY });
 
-            const discoGram = {
-                message_id: message.id,
-                from: {
-                    id: message.author.id,
-                    first_name: message.author.username,
-                },
-                chat: {
-                    id: message.channel.id,
-                    type: 'group',
-                },
-                date: message.createdTimestamp / 1000,
-                text: capturedMessage,
-            };
+    client.sendMessage(chatId, message)
+        .then((sentMessage) => {
+            console.log(`Message sent: ${sentMessage.content}`);
 
-            // const processed = await discoBot.process(discoGram, client.user.id, capturedMessage);
-            const conv = discoBot._newChatConversation(discoGram);
-            let parentMessageId;
-            if (!conv) {
-                conv = discoBot._newChatConversation(discoGram);
-            } else if (discoBot.reply_to_message) {
-                parentMessageId = conv.messageIds.get(discoGram.reply_to_message.message_id.toString()) || null;
-            }
-            async function replyToMessageWrapper(discoBot, conv, discoGram, capturedMessage, parentMessageId) {
-                try {
-                    await discoBot._replyToMessage(conv, discoGram, capturedMessage, parentMessageId);
-                } catch (err) {
-                    if (err.response && err.response.statusCode === 400) {
-                        console.log('Ignoring telegram 404 error')
-                    } else {
-                        throw err;
-                    }
-                }
-            }
-            let res = await replyToMessageWrapper(discoBot, conv, discoGram, capturedMessage, parentMessageId);
+            const chatMessage = new ChatMessage({
+                bot: shitbot,
+                id: sentMessage.id,
+                chatId: chatId,
+                threadId: null,
+                message: sentMessage,
+                replyToMessage: null,
+            });
 
-            et.emit('result', { res });
-
-        }
-    });
-
-    // listen for shitbot api response
-    et.on('result', async (res) => {
-        console.log(`made it to discord with res:${res}`)
-
-    });
-
+            console.log(`Chat message created: ${chatMessage.message.content}`);
+        })
+        .catch((error) => {
+            console.error(`Failed to send message: ${error}`);
+        });
 })();
-
-
-client.login(token);

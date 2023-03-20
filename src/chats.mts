@@ -33,6 +33,8 @@ export interface Thread {
   ): Promise<Response>;
 }
 
+
+
 export interface ImageResponse {
   image: string | Buffer;
   messageId: string;
@@ -48,6 +50,25 @@ interface BotOptions {
   chatGptKey: string;
   io: SocketIoServer;
 }
+
+interface MessageOptions {
+  replyToMessageId: any;
+}
+
+interface MessagingBot {
+  sendMessage(chatId: any, message: string, options: MessageOptions): Promise<string>;
+  sendPhoto(chatId: any, image: ???, options: MessageOptions): Promise<string>;
+}
+
+interface ChatMessage {
+  bot: MessagingBot;
+  id: any;
+  chatId: any;
+  threadId: any;
+  message: string;
+  replyToMessage?: ChatMessage;
+}
+
 
 enum User {
   CONNECT_SPD = 754240355,
