@@ -1,6 +1,8 @@
 const EventEmitter = require("node:events");
 const { IntentsBitField, Client } = require('discord.js');
 
+console.log('Abuse!')
+
 class MessageOptions {
     constructor(replyToMessageId) {
         this.replyToMessageId = replyToMessageId;
@@ -25,7 +27,7 @@ class MessagingBot {
 
 
 class ChatMessage {
-    constructor({ bot, id, chatId, threadId, message, replyToMessage }) {
+    constructor({ bot, id, chatId, threadId, message }) {
         if (!(bot instanceof MessagingBot)) {
             throw new TypeError("should be instance of MessagingBot");
         }
@@ -36,6 +38,8 @@ class ChatMessage {
         this.threadId = threadId;
         this.message = message;
         this.replyToMessage = ChatMessage;
+        console.log('ChatMessage!')
+
     }
 }
 
@@ -61,20 +65,19 @@ class DiscoClient extends MessagingBot {
     }
 
     async sendMessage(chatId, text, options) {
-        const channel = this.bot.channels.cache.get(chatId);
-
-        const message = await channel.send(text, options);
-        return message;
+        const message = await this.bot.channels.cache.get(chatId).send(text);
+        return new ChatMessage({
+            bot: this,
+            id: message.id,
+            chatId: message.channel.id,
+            threadId: message.channel.id,
+            message: message.content,
+        });
+        console.log("SendMEssage!")
     }
 
     async sendPhoto(chatId, photo, options, fileOptions) {
-        const channel = this.bot.channels.cache.get(chatId);
 
-        const attachment = new client.attachment(photo, fileOptions);
-
-        const message = await channel.send(options);
-        message.channel.send(attachment);
-        return message;
     }
 
 }
