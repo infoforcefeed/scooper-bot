@@ -1,4 +1,4 @@
-const { Client, IntentsBitField, Message } = require('discord.js');
+const { Client, IntentsBitField } = require('discord.js');
 const { token } = require('./config.json');
 const { Server } = require('socket.io')
 const { EventEmitter } = require("node:events");
@@ -20,10 +20,6 @@ class NeedleMouseClient {
     }
 
     async payload(message) {
-        //const uf_messageid = message.id.substring(0, 3)
-        //const f_messageId = parseInt(uf_messageid);
-
-
         return {
             message_id: message.id,
             message_thread_id: message.id,
@@ -70,9 +66,12 @@ class NeedleMouseClient {
 
         if (message.mentions.has(client.user.id)) {
             const resp = needleMouse.payload(message);
-            // console.log(resp)
-            const AtUser = (await resp).from.first_name;
-            shitBot.process(needleMouse.payload(), message.author.username, message.content)
+            console.log(resp)
+            const chatId = (await resp).chat.id;
+            console.log(chatId)
+            const cId = (await resp).text;
+            console.log(cId)
+            await shitBot.process(await needleMouse.payload(message), message.author.username, message.content)
         }
     });
 
