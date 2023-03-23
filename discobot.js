@@ -14,15 +14,51 @@ const client = new Client({
 
 const io = new Server();
 
+class NeedleMouseClient {
+    constructor({ client }) {
+        this.client = client;
+    }
+
+    async payload(message) {
+        const uf_messageid = message.id.substring(0, 3)
+        const f_messageId = parseInt(uf_messageid);
+
+        return {
+            message_id: f_messageId,
+            message_thread_id: message.id,
+            from: {
+                id: message.author.id,
+                first_name: message.author.username,
+                user_name: message.author.username,
+                is_bot: message.author.bot,
+            },
+            chat: {
+                id: message.channel.id,
+                type: 'group',
+            },
+            date: message.createdTimestamp / 1000,
+            text: message.content,
+        };
+    }
+
+    // shitbot processes payload
+    async sendMessage(chatId, text) {
+        return client.channels.cache.get(chatId).send(text);
+    }
+
+}
+
 (async () => {
-    const { NeedleMouseClient } = await import('./disco.js');
+    //const { NeedleMouseClient } = await import('./disco.js');
     const { ShitBot } = await import('./src/chats.mjs');
-    const needleMouse = new NeedleMouseClient(client);
+    const needleMouse = new NeedleMouseClient({ client });
     const shitBot = new ShitBot({ bot: needleMouse, chatGptKey: process.env.OPENAI_API_KEY, io });
 
 
     client.on('ready', () => {
         console.log(`Logged in as ${client.user.tag}!`);
+
+        console.log(shitBot)
     });
 
 
@@ -32,41 +68,34 @@ const io = new Server();
         if (message.author.bot) return; // Ignore messages from bots
 
         if (message.mentions.has(client.user.id)) {
-
-
-            const payload = {
-                message_id: message.id,
-                message_thread_id: message.id,
-                from: {
-                    id: message.author.id,
-                    first_name: message.author.username,
-                    user_name: message.author.username,
-                    is_bot: message.author.bot,
-                },
-                chat: {
-                    id: message.channel.id,
-                    type: 'group',
-                },
-                date: message.createdTimestamp / 1000,
-                text: message.content,
-            };
-
-
-            // this is capturing the username and the message content, how necessary is this?
-            const regx = /^(?:@([^\s]+)\s)?((?:.|\n)+)$/m.exec(message);
-            if (regx) {
-                const capturedMessage = regx[2];
-                // 
-                console.log(capturedMessage)
-                if (capturedMessage[0] === '/') return;
-
-                const AtUser = "NeedleMouse"
-                needleMouse.sendMessage(message.id, `@${AtUser} ${capturedMessage}`, { replyTo: message.id });
-            }
-
-
+            const resp = needleMouse.payload(message);
+            console.log(resp)
+            const chatId = (await resp).chat.id;
+            console.log(chatId)
+            const msg = (await resp).text;
+            console.log(chatId)
+            shitBot.process(resp, chatId, msg)
         }
     });
+
+
+    // const payload = {
+    //     message_id: message.id,
+    //     message_thread_id: message.id,
+    //     from: {
+    //         id: message.author.id,
+    //         first_name: message.author.username,
+    //         user_name: message.author.username,
+    //         is_bot: message.author.bot,
+    //     },
+    //     chat: {
+    //         id: message.channel.id,
+    //         type: 'group',
+    //     },
+    //     date: message.createdTimestamp / 1000,
+    //     text: message.content,
+    // };
+
 
 
 })();
