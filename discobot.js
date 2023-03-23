@@ -71,7 +71,9 @@ class NeedleMouseClient {
             console.log(chatId)
             const cId = (await resp).text;
             console.log(cId)
-            await shitBot.process(await needleMouse.payload(message), message.author.username, message.content)
+            needleMouse.sendMessage(chatId, cId);
+            //shitBot.process(await needleMouse.sendMessage(message))
+            console.log(shitBot)
         }
     });
 
