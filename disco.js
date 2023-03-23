@@ -21,6 +21,10 @@ class MessagingBot {
 }
 
 
+class Message {
+    constructor(messageid, message_thread_id, from, date, chat, sender_chat, forward_from,)
+}
+
 class ChatMessage {
     constructor({ bot, id, chatId, threadId, message }) {
         if (!(bot instanceof MessagingBot)) {
@@ -39,8 +43,8 @@ class ChatMessage {
 }
 
 // At what point is any of this processed by shitbot? 
-class NeedleMouseClient extends MessagingBot {
-    super()
+class NeedleMouseClient {
+
     constructor({ bot }) {
         this.bot = bot
     }
@@ -51,7 +55,8 @@ class NeedleMouseClient extends MessagingBot {
                 content: text,
                 ...options,
             };
-            console.log(this.bot)
+
+            console.log(bot)
             const channel = await this.bot.channels.fetch(chatId);
             const message = await channel.send(messageOptions);
 

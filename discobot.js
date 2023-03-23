@@ -33,32 +33,35 @@ const io = new Server();
 
         if (message.mentions.has(client.user.id)) {
 
-            //mimic this regex shit
+
+            const payload = {
+                message_id: message.id,
+                message_thread_id: message.id,
+                from: {
+                    id: message.author.id,
+                    first_name: message.author.username,
+                    user_name: message.author.username,
+                    is_bot: message.author.bot,
+                },
+                chat: {
+                    id: message.channel.id,
+                    type: 'group',
+                },
+                date: message.createdTimestamp / 1000,
+                text: message.content,
+            };
+
+
+            // this is capturing the username and the message content, how necessary is this?
             const regx = /^(?:@([^\s]+)\s)?((?:.|\n)+)$/m.exec(message);
             if (regx) {
                 const capturedMessage = regx[2];
+                // 
+                console.log(capturedMessage)
                 if (capturedMessage[0] === '/') return;
 
-                const payload = {
-                    message_id: message.id,
-                    message_thread_id: message.id,
-                    from: {
-                        id: message.author.id,
-                        first_name: message.author.username,
-                        user_name: message.author.username,
-                        is_bot: message.author.bot,
-                    },
-                    chat: {
-                        id: message.channel.id,
-                        type: 'group',
-                    },
-                    date: message.createdTimestamp / 1000,
-                    text: message.content,
-                };
-
                 const AtUser = "NeedleMouse"
-                shitBot.process(payload, AtUser, payload.text);
-
+                needleMouse.sendMessage(message.id, `@${AtUser} ${capturedMessage}`, { replyTo: message.id });
             }
 
 
