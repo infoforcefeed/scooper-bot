@@ -12,54 +12,59 @@ const client = new Client({
         IntentsBitField.Flags.MessageContent]
 });
 
-const et = new EventEmitter();
 const io = new Server();
 
 (async () => {
-    const { DiscoClient } = await import('./disco.js');
+    const { NeedleMouseClient } = await import('./disco.js');
     const { ShitBot } = await import('./src/chats.mjs');
-    const discoBot = new DiscoClient({ bot: client, chatGptKey: process.env.OPENAI_API_KEY, io });
-    const shitBot = new ShitBot({ bot: DiscoClient, chatGptKey: process.env.OPENAI_API_KEY, io });
+    const needleMouse = new NeedleMouseClient(client);
+    const shitBot = new ShitBot({ bot: needleMouse, chatGptKey: process.env.OPENAI_API_KEY, io });
+
 
     client.on('ready', () => {
         console.log(`Logged in as ${client.user.tag}!`);
     });
-    // discord api listens for messageCreate
-    // emit if client is a user.
+
+
+    // on message create
 
     client.on('messageCreate', async (message) => {
         if (message.author.bot) return; // Ignore messages from bots
 
         if (message.mentions.has(client.user.id)) {
 
+            //mimic this regex shit
             const regx = /^(?:@([^\s]+)\s)?((?:.|\n)+)$/m.exec(message);
             if (regx) {
                 const capturedMessage = regx[2];
                 if (capturedMessage[0] === '/') return;
-                message.reply("Oops, I didn't make it home!")
 
-
-                const discoGram = {
+                const payload = {
                     message_id: message.id,
+                    message_thread_id: message.id,
                     from: {
                         id: message.author.id,
                         first_name: message.author.username,
+                        user_name: message.author.username,
+                        is_bot: message.author.bot,
                     },
                     chat: {
                         id: message.channel.id,
                         type: 'group',
                     },
                     date: message.createdTimestamp / 1000,
-                    text: capturedMessage,
+                    text: message.content,
                 };
 
-                let x = shitBot.process(discoGram);
-                console.log(x)
+                const AtUser = "NeedleMouse"
+                shitBot.process(payload, AtUser, payload.text);
 
             }
 
+
         }
     });
+
 
 })();
 

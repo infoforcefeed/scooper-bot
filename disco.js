@@ -1,8 +1,3 @@
-const EventEmitter = require("node:events");
-const { IntentsBitField, Client } = require('discord.js');
-
-console.log('Abuse!')
-
 class MessageOptions {
     constructor(replyToMessageId) {
         this.replyToMessageId = replyToMessageId;
@@ -31,7 +26,7 @@ class ChatMessage {
         if (!(bot instanceof MessagingBot)) {
             throw new TypeError("should be instance of MessagingBot");
         }
-
+        console.log("ChatMessage: ", bot, id, chatId, threadId, message)
         this.bot = bot;
         this.id = id;
         this.chatId = chatId;
@@ -43,45 +38,28 @@ class ChatMessage {
     }
 }
 
-
-
-
-const client = new Client({
-    intents: [
-        IntentsBitField.Flags.Guilds,
-        IntentsBitField.Flags.GuildMembers,
-        IntentsBitField.Flags.GuildMessages,
-        IntentsBitField.Flags.MessageContent
-    ]
-});
-
-
-
-class DiscoClient extends MessagingBot {
-    constructor(options, bot) {
-        super({ intents: client.options.intents });
+// At what point is any of this processed by shitbot? 
+class NeedleMouseClient extends MessagingBot {
+    super()
+    constructor({ bot }) {
         this.bot = bot
-        this.options = options;
     }
 
     async sendMessage(chatId, text, options) {
-        const message = await this.bot.channels.cache.get(chatId).send(text);
-        return new ChatMessage({
-            bot: this,
-            id: message.id,
-            chatId: message.channel.id,
-            threadId: message.channel.id,
-            message: message.content,
-        });
-        console.log("SendMEssage!")
+        try {
+            const messageOptions = {
+                content: text,
+                ...options,
+            };
+            console.log(this.bot)
+            const channel = await this.bot.channels.fetch(chatId);
+            const message = await channel.send(messageOptions);
+
+            return message;
+        } catch (err) {
+            console.error("CATCH ERR: ", err);
+        }
     }
-
-    async sendPhoto(chatId, photo, options, fileOptions) {
-
-    }
-
 }
 
-module.exports = { MessageOptions, MessagingBot, ChatMessage, DiscoClient };
-
-
+module.exports = { NeedleMouseClient };
