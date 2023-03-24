@@ -19,28 +19,9 @@ class NeedleMouseClient {
         this.client = client;
     }
 
-    async payload(message) {
-        return {
-            message_id: message.id,
-            message_thread_id: message.id,
-            from: {
-                id: message.author.id,
-                first_name: message.author.username,
-                user_name: message.author.username,
-                is_bot: message.author.bot,
-            },
-            chat: {
-                id: message.channel.id,
-                type: 'group',
-            },
-            date: message.createdTimestamp / 1000,
-            text: message.content,
-        };
-    }
 
-    // shitbot processes payload
-    async sendMessage(chatId, text) {
-        return client.channels.cache.get(chatId).send(text);
+    async sendMessage(text, chatId) {
+        return client.channels.cache.get(chatId);
     }
 
 }
@@ -67,12 +48,12 @@ class NeedleMouseClient {
             const msg = {
                 chat: {
                     id: parseInt(message.id),
-                    type: "private", // Replace this with the actual chat type, e.g. "private", "group", etc.
+                    type: "private",
                 },
-                message_id: parseInt(message.id), // Replace this with the actual message ID
-                message_thread_id: parseInt(message.id), // Replace this with the actual message thread ID, if available
+                message_id: parseInt(message.id),
+                message_thread_id: parseInt(message.id),
                 reply_to_message: {
-                    message_id: parseInt(message.id), // Replace this with the actual message ID of the replied-to message, if applicable
+                    message_id: parseInt(message.id),
                 },
             };
 
