@@ -55,7 +55,6 @@ class NeedleMouseClient {
     client.on('ready', () => {
         console.log(`Logged in as ${client.user.tag}!`);
 
-        console.log(shitBot)
     });
 
 
@@ -65,15 +64,22 @@ class NeedleMouseClient {
         if (message.author.bot) return; // Ignore messages from bots
 
         if (message.mentions.has(client.user.id)) {
-            const resp = needleMouse.payload(message);
-            console.log(resp)
-            const chatId = (await resp).chat.id;
-            console.log(chatId)
-            const cId = (await resp).text;
-            console.log(cId)
-            needleMouse.sendMessage(chatId, cId);
-            //shitBot.process(await needleMouse.sendMessage(message))
-            console.log(shitBot)
+            const msg = {
+                chat: {
+                    id: parseInt(message.id),
+                    type: "private", // Replace this with the actual chat type, e.g. "private", "group", etc.
+                },
+                message_id: parseInt(message.id), // Replace this with the actual message ID
+                message_thread_id: parseInt(message.id), // Replace this with the actual message thread ID, if available
+                reply_to_message: {
+                    message_id: parseInt(message.id), // Replace this with the actual message ID of the replied-to message, if applicable
+                },
+            };
+
+            console.log(msg)
+            const AtUser = "NeedleMouse"
+            //needleMouse.sendMessage(chatId, cId);
+            shitBot.process(msg, AtUser, message.content)
         }
     });
 
