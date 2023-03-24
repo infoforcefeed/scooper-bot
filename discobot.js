@@ -11,22 +11,23 @@ const client = new Client({
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent]
 });
-
+em = new EventEmitter();
 const io = new Server();
 
 class NeedleMouseClient {
-    constructor({ client }) {
-        this.client = client;
+    constructor({ bot }) {
+        this.bot = bot;
     }
 
+    async sendMessage(chatId, text) {
 
-    async sendMessage(text, chatId) {
-        return client.channels.cache.get(chatId);
+        em.emit('res', text);
     }
 
 }
 
 (async () => {
+    em = new EventEmitter();
     //const { NeedleMouseClient } = await import('./disco.js');
     const { ShitBot } = await import('./src/chats.mjs');
     const needleMouse = new NeedleMouseClient({ client });
@@ -51,7 +52,7 @@ class NeedleMouseClient {
                     type: "private",
                 },
                 message_id: parseInt(message.id),
-                message_thread_id: parseInt(message.id),
+                message_thread_id: parseInt(message.channelId),
                 reply_to_message: {
                     message_id: parseInt(message.id),
                 },
@@ -60,29 +61,13 @@ class NeedleMouseClient {
             console.log(msg)
             const AtUser = "NeedleMouse"
             //needleMouse.sendMessage(chatId, cId);
-            shitBot.process(msg, AtUser, message.content)
+            await shitBot.process(msg, AtUser, message.content)
+            em.on('res', async (res) => {
+                message.reply(res)
+            })
+
         }
     });
-
-
-    // const payload = {
-    //     message_id: message.id,
-    //     message_thread_id: message.id,
-    //     from: {
-    //         id: message.author.id,
-    //         first_name: message.author.username,
-    //         user_name: message.author.username,
-    //         is_bot: message.author.bot,
-    //     },
-    //     chat: {
-    //         id: message.channel.id,
-    //         type: 'group',
-    //     },
-    //     date: message.createdTimestamp / 1000,
-    //     text: message.content,
-    // };
-
-
 
 })();
 
