@@ -19,18 +19,17 @@ class NeedleMouseClient {
         this.client = client;
     }
 
-    async sendMessage(chatId, text) {
+    async sendMessage(chatId, text, parentMessageId = null) {
         try {
             //1081600367307010120
-            const channel = await client.channels.fetch('1081600367307010120')
             const sentMessage = await client.channels.cache.get('1081600367307010120').send(text)
-            const resText = sentMessage.content;
-            const message_id = chatId;
-            console.log(resText, message_id)
-            return {
-                text: resText,
-                messageId: message_id
+            const messageId = parseInt(sentMessage.id);
+            const response = {
+                text: sentMessage.content,
+                messageId: messageId,
+                message_id: messageId
             };
+            return response;
 
         } catch (err) {
             console.log(err)
