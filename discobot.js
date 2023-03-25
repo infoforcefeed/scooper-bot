@@ -25,7 +25,7 @@ class NeedleMouseClient {
             const channel = await client.channels.fetch('1081600367307010120')
             const sentMessage = await client.channels.cache.get('1081600367307010120').send(text)
             const resText = sentMessage.content;
-            const message_id = sentMessage.id;
+            const message_id = chatId;
             console.log(resText, message_id)
             return {
                 text: resText,
