@@ -19,9 +19,15 @@ class NeedleMouseClient {
         this.bot = bot;
     }
 
-    async sendMessage(chatId, text) {
-
-        em.emit('res', text);
+    async sendMessage(chatId, text, options) {
+        const cli = client
+        try {
+            chatId = 1081600367307010120
+            const sentMessage = await cli.channels.fetch(`${chatId}`, options).then(channel => channel.send(text));
+            return sentMessage;
+        } catch (err) {
+            console.log(err)
+        }
     }
 
 }
@@ -45,28 +51,31 @@ class NeedleMouseClient {
     client.on('messageCreate', async (message) => {
         if (message.author.bot) return; // Ignore messages from bots
 
-        if (message.mentions.has(client.user.id)) {
-            const msg = {
-                chat: {
-                    id: parseInt(message.id),
-                    type: "private",
-                },
-                message_id: parseInt(message.id),
-                message_thread_id: parseInt(message.channelId),
-                reply_to_message: {
-                    message_id: parseInt(message.id),
-                },
-            };
+        const msg = {
+            chat: {
+                id: parseInt(message.id),
+                type: "private",
+            },
+            message_id: parseInt(message.id),
+            message_thread_id: parseInt(message.id),
+            reply_to_message: {
+                message_id: message.reference ? parseInt(message.reference.messageId) : null,
+            },
+        };
 
-            console.log(msg)
-            const AtUser = "NeedleMouse"
-            //needleMouse.sendMessage(chatId, cId);
+        console.log(msg)
+        const AtUser = "NeedleMouse"
+        //needleMouse.sendMessage(chatId, cId);
+        try {
             await shitBot.process(msg, AtUser, message.content)
-            em.on('res', async (res) => {
-                message.reply(res)
-            })
-
+        } catch (err) {
+            console.log(err)
         }
+        // await shitBot.process(msg, AtUser, message.content)
+        // em.on('res', async (res) => {
+        //     message.reply(res)
+        // })
+
     });
 
 })();
