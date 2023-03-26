@@ -19,7 +19,7 @@ class NeedleMouseClient {
         this.client = client;
     }
 
-    async sendMessage(chatId, text, parentMessageId = null) {
+    async sendMessage(chatId, text, parentMessageId) {
         try {
             //1081600367307010120
             const sentMessage = await client.channels.cache.get('1081600367307010120').send(text)
@@ -29,6 +29,9 @@ class NeedleMouseClient {
                 messageId: messageId,
                 message_id: messageId
             };
+            if (parentMessageId) {
+                response.parentMessageId = parentMessageId;
+            }
             return response;
 
         } catch (err) {
@@ -54,7 +57,6 @@ class NeedleMouseClient {
     // on message create
 
     client.on('messageCreate', async (message) => {
-        console.log(message)
         if (message.author.bot) return; // Ignore messages from bots
 
         const msg = {
@@ -82,16 +84,18 @@ class NeedleMouseClient {
         //         messageReference: message.id | null
         //     },
         // };
-        try {
-            await shitBot.process(msg, AtUser, message.content)
-        } catch (err) {
-            console.log(err)
-        }
-        // await shitBot.process(msg, AtUser, message.content)
-        // em.on('res', async (res) => {
-        //     message.reply(res)
-        // })
+        if (message.mentions.has(client.user.id)) {
+            try {
+                await shitBot.process(msg, AtUser, message.content)
+            } catch (err) {
+                console.log(err)
+            }
+            // await shitBot.process(msg, AtUser, message.content)
+            // em.on('res', async (res) => {
+            //     message.reply(res)
+            // })
 
+        }
     });
 
 })();
