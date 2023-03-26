@@ -22,15 +22,20 @@ class NeedleMouseClient {
     async sendMessage(chatId, text, parentMessageId) {
         try {
             //1081600367307010120
+            // why is this here to start?
             const sentMessage = await client.channels.cache.get('1081600367307010120').send(text)
-            const messageId = parseInt(sentMessage.id);
+            const messageId = parseInt(chatId);
             const response = {
-                text: sentMessage.content,
+                text: text,
                 messageId: messageId,
-                message_id: messageId
+                message_id: messageId,
+                conversation_id: messageId,
+                parent_id: messageId
             };
+            console.log(response)
             if (parentMessageId) {
                 response.parentMessageId = parentMessageId;
+                console.log("parentMessageId", parentMessageId)
             }
             return response;
 
@@ -55,46 +60,59 @@ class NeedleMouseClient {
 
 
     // on message create
-
     client.on('messageCreate', async (message) => {
         if (message.author.bot) return; // Ignore messages from bots
 
+        // const msg = {
+        //     chat: {
+        //         id: parseInt(message.id),
+        //         type: 'group'
+        //     },
+        //     ChatId: parseInt(message.id),
+
+        //     message_id: parseInt(message.id),
+        //     message_thread_id: parseInt(message.channel.id),
+        //     reply_to_message_id: {
+        //         message_id: parseInt(message.id),
+        //     },
+        // };
+
         const msg = {
             chat: {
-                id: parseInt(message.id),
-                type: "private",
+                id: parseInt(message.channel.id),
+                type: 'group',
             },
-            ChatId: parseInt(message.id),
-
-            message_id: parseInt(message.id),
-            message_thread_id: parseInt(message.channel.id),
-            reply_to_message_id: {
-                message_id: parseInt(message.id),
+            from: {
+                id: parseInt(message.author.id),
             },
+            date: Math.floor(message.createdAt.getTime() / 1000),
+            text: message.content,
         };
 
         console.log(msg)
-        const AtUser = "NeedleMouse"
-        //needleMouse.sendMessage(chatId, cId);
-        // const options = {
-        //     message_thread_id: parseInt(message.channel.id),
+        const AtUser = "scooper_bot"
 
-        //     parsemode: 'MarkdownV2',
-        //     reply: {
-        //         messageReference: message.id | null
-        //     },
-        // };
+
+
         if (message.mentions.has(client.user.id)) {
             try {
+                console.log("///////NO REFERENCE///////////")
+                console.log(message)
                 await shitBot.process(msg, AtUser, message.content)
             } catch (err) {
                 console.log(err)
             }
-            // await shitBot.process(msg, AtUser, message.content)
-            // em.on('res', async (res) => {
-            //     message.reply(res)
-            // })
-
+            // check if message is a reply
+            if (message.reference) {
+                try {
+                    console.log("////////HAS REFERENCE////////")
+                    console.log(message)
+                    await shitBot.process(msg, AtUser, message.content)
+                }
+                catch (err) {
+                    console.log(err)
+                }
+            }
         }
     });
 
