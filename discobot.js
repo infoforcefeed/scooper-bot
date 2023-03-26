@@ -11,18 +11,46 @@ const client = new Client({
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent]
 });
-
+em = new EventEmitter();
 const io = new Server();
 
+class NeedleMouseClient {
+    constructor({ client }) {
+        this.client = client;
+    }
+
+    async sendMessage(chatId, text, parentMessageId) {
+        try {
+            //1081600367307010120
+            const sentMessage = await client.channels.cache.get('1081600367307010120').send(text)
+            const messageId = parseInt(sentMessage.id);
+            const response = {
+                text: sentMessage.content,
+                messageId: messageId,
+                message_id: messageId
+            };
+            if (parentMessageId) {
+                response.parentMessageId = parentMessageId;
+            }
+            return response;
+
+        } catch (err) {
+            console.log(err)
+        }
+    }
+}
+
 (async () => {
-    const { NeedleMouseClient } = await import('./disco.js');
+    em = new EventEmitter();
+    //const { NeedleMouseClient } = await import('./disco.js');
     const { ShitBot } = await import('./src/chats.mjs');
-    const needleMouse = new NeedleMouseClient(client);
+    const needleMouse = new NeedleMouseClient({ client });
     const shitBot = new ShitBot({ bot: needleMouse, chatGptKey: process.env.OPENAI_API_KEY, io });
 
 
     client.on('ready', () => {
         console.log(`Logged in as ${client.user.tag}!`);
+
     });
 
 
@@ -31,40 +59,44 @@ const io = new Server();
     client.on('messageCreate', async (message) => {
         if (message.author.bot) return; // Ignore messages from bots
 
+        const msg = {
+            chat: {
+                id: parseInt(message.id),
+                type: "private",
+            },
+            ChatId: parseInt(message.id),
+
+            message_id: parseInt(message.id),
+            message_thread_id: parseInt(message.channel.id),
+            reply_to_message_id: {
+                message_id: parseInt(message.id),
+            },
+        };
+
+        console.log(msg)
+        const AtUser = "NeedleMouse"
+        //needleMouse.sendMessage(chatId, cId);
+        // const options = {
+        //     message_thread_id: parseInt(message.channel.id),
+
+        //     parsemode: 'MarkdownV2',
+        //     reply: {
+        //         messageReference: message.id | null
+        //     },
+        // };
         if (message.mentions.has(client.user.id)) {
-
-            //mimic this regex shit
-            const regx = /^(?:@([^\s]+)\s)?((?:.|\n)+)$/m.exec(message);
-            if (regx) {
-                const capturedMessage = regx[2];
-                if (capturedMessage[0] === '/') return;
-
-                const payload = {
-                    message_id: message.id,
-                    message_thread_id: message.id,
-                    from: {
-                        id: message.author.id,
-                        first_name: message.author.username,
-                        user_name: message.author.username,
-                        is_bot: message.author.bot,
-                    },
-                    chat: {
-                        id: message.channel.id,
-                        type: 'group',
-                    },
-                    date: message.createdTimestamp / 1000,
-                    text: message.content,
-                };
-
-                const AtUser = "NeedleMouse"
-                shitBot.process(payload, AtUser, payload.text);
-
+            try {
+                await shitBot.process(msg, AtUser, message.content)
+            } catch (err) {
+                console.log(err)
             }
-
+            // await shitBot.process(msg, AtUser, message.content)
+            // em.on('res', async (res) => {
+            //     message.reply(res)
+            // })
 
         }
     });
-
 
 })();
 
