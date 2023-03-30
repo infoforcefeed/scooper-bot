@@ -42,8 +42,8 @@ export class BeckyBot {
     }
     let match = /^add\s+(.*)\s+(-?\d+\.\d+),?\s*(-?\d+\.\d+)$/.exec(command);
     if (match) {
-      const [name, lat, lon] = match;
-      this._addLocation(msg, name, parseInt(lat, 10), parseInt(lon, 10));
+      const [_, name, lat, lon] = match;
+      this._addLocation(msg, name, parseFloat(lat), parseFloat(lon));
       return;
     }
   }
