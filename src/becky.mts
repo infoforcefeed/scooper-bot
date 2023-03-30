@@ -40,10 +40,17 @@ export class BeckyBot {
       this._listLocations(msg);
       return;
     }
+    let match = /^add\s+(.*)\s+(-?\d+\.\d+),?\s*(-?\d+\.\d+)$/.exec(command);
+    if (match) {
+      const [name, lat, lon] = match;
+      this._addLocation(msg, name, parseInt(lat, 10), parseInt(lon, 10));
+      return;
+    }
   }
 
   private _onSocket(socket: Socket) {
     this._sockets.push(socket);
+    console.log('New Becky connected. Total:', this._sockets.length);
   }
 
   private _listLocations(msg: Message) {
@@ -54,17 +61,28 @@ export class BeckyBot {
       ++count;
       await this._sendLocation(msg, location);
     });
-    socket.on(`${requestId}`, async (err: any) => {
+    socket.once(`${requestId}`, async (err: any) => {
       socket.removeAllListeners(`${requestId}_location`);
       if (err) {
         await this._sendError(msg, err);
       } else if (count === 0) {
-        await this._bot.sendMessage(msg.chat.id, 'No locations.', {
-          reply_to_message_id: msg.message_id
-        });
+        await this._sendReply(msg, 'No locations.');
       }
     });
     socket.emit('listLocations', {requestId});
+  }
+
+  private _addLocation(msg: Message, name: string, lat: number, lon: number) {
+    const requestId = _makeRequestId();
+    const socket = this._pickSocket();
+    socket.once(`${requestId}`, async (err: any) => {
+      if (err) {
+        await this._sendError(msg, err);
+      } else {
+        await this._sendReply(msg, `Added location ${name}.`);
+      }
+    });
+    socket.emit('addLocation', {requestId, name, lat, lon});
   }
 
   private _pickSocket(): Socket {
@@ -114,6 +132,10 @@ export class BeckyBot {
       }
     }
 
+    await this._sendReply(msg, message);
+  }
+
+  private async _sendReply(msg: Message, message: string) {
     await this._bot.sendMessage(msg.chat.id, message, {
       reply_to_message_id: msg.message_id
     });
