@@ -1,5 +1,6 @@
 {
   "watch": [".", "src"],
-  "ext": "mts,ts,json",
+  "ignore": ["*.test.js", "**/fixtures/**"],
+  "ext": "mts,mjs,ts,js",
   "exec": "ts-node ./index.ts"
 }

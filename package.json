@@ -1,7 +1,7 @@
 {
   "scripts": {
     "compile": "tsc",
-    "start": "ts-node index.js",
+    "start": "while true; do nodemon --exitcrash; sleep 1; done",
     "mon": "nodemon"
   },
   "dependencies": {
@@ -9,6 +9,7 @@
     "@types/node-telegram-bot-api": "^0.61.2",
     "axios": "^0.21.2",
     "chatgpt": "^4.3.2",
+    "forever": "^4.0.3",
     "jimp": "^0.16.2",
     "node-telegram-bot-api": "^0.61.0",
     "nodemon": "^2.0.20",
