@@ -6,6 +6,14 @@ interface BotOptions {
   io: SocketIoServer
 }
 
+interface Request {
+  requestId: string;
+}
+
+interface ResponseError {
+  error: number;
+}
+
 interface Location {
   id: string;
   name: string;
@@ -26,34 +34,43 @@ interface LocationResponse {
   snow?: PrecipitationTotals;
 }
 
+function isResponseError(res: any): res is ResponseError {
+  return res && typeof res.error === 'number';
+}
+
 export class BeckyBot {
   private readonly _bot: TelegramBot;
-  private readonly _sockets: Socket[] = [];
+  private _sockets: Socket[] = [];
 
   constructor(options: BotOptions) {
     this._bot = options.bot;
     options.io.of('/becky').on('connection', this._onSocket.bind(this));
   }
 
-  process(msg: Message, command?: string) {
+  async process(msg: Message, command?: string) {
     if (!command || command === 'list') {
-      this._listLocations(msg);
+      await this._listLocations(msg);
       return;
     }
     let match = /^add\s+(.*)\s+(-?\d+\.\d+),?\s*(-?\d+\.\d+)$/.exec(command);
     if (match) {
       const [_, name, lat, lon] = match;
-      this._addLocation(msg, name, parseFloat(lat), parseFloat(lon));
+      await this._addLocation(msg, name, parseFloat(lat), parseFloat(lon));
       return;
     }
+    await this._pickLocations(msg, command);
   }
 
   private _onSocket(socket: Socket) {
     this._sockets.push(socket);
     console.log('New Becky connected. Total:', this._sockets.length);
+    socket.once('disconnect', () => {
+      this._sockets = this._sockets.filter((s) => s !== socket);
+      console.log('Becky disconnected. Remaining:', this._sockets.length);
+    });
   }
 
-  private _listLocations(msg: Message) {
+  private async _listLocations(msg: Message) {
     const requestId = _makeRequestId();
     const socket = this._pickSocket();
     let count = 0;
@@ -61,38 +78,55 @@ export class BeckyBot {
       ++count;
       await this._sendLocation(msg, location);
     });
-    socket.once(`${requestId}`, async (err: any) => {
-      socket.removeAllListeners(`${requestId}_location`);
-      if (err) {
-        await this._sendError(msg, err);
-      } else if (count === 0) {
+    try {
+      await this._emit(socket, 'listLocations', {requestId});
+      if (count === 0) {
         await this._sendReply(msg, 'No locations.');
       }
-    });
-    socket.emit('listLocations', {requestId});
+    } catch (err) {
+      await this._sendError(msg, err);
+    }
+    socket.removeAllListeners(`${requestId}_location`);
   }
 
-  private _addLocation(msg: Message, name: string, lat: number, lon: number) {
+  private async _addLocation(msg: Message, name: string, lat: number, lon: number) {
     const requestId = _makeRequestId();
     const socket = this._pickSocket();
-    socket.once(`${requestId}`, async (err: any) => {
-      if (err) {
-        await this._sendError(msg, err);
-      } else {
-        await this._sendReply(msg, `Added location ${name}.`);
-      }
+    try {
+      await this._emit(socket, 'addLocation', {requestId, name, lat, lon});
+      await this._sendReply(msg, `Added location ${name}.`);
+    } catch (err) {
+      await this._sendError(msg, err);
+    }
+  }
+
+  private async _pickLocations(msg: Message, where: string) {
+    const requestId = _makeRequestId();
+    const socket = this._pickSocket();
+    let count = 0;
+    socket.on(`${requestId}_location`, async (location: LocationResponse) => {
+      ++count;
+      await this._sendLocation(msg, location);
     });
-    socket.emit('addLocation', {requestId, name, lat, lon});
+    try {
+      await this._emit(socket, 'whereToGo', {requestId, where});
+      if (count === 0) {
+        await this._sendReply(msg, 'No locations.');
+      }
+    } catch (err) {
+      await this._sendError(msg, err);
+    }
+    socket.removeAllListeners(`${requestId}_location`);
   }
 
   private _pickSocket(): Socket {
     return this._sockets[0];
   }
 
-  private async _sendError(msg: Message, err: Error): Promise<void> {
+  private async _sendError(msg: Message, err: any): Promise<void> {
     await this._bot.sendMessage(
       msg.chat.id,
-      '```\n' + err.toString() + '\n```',
+      '```\n' + JSON.stringify(err, null, 2) + '\n```',
       {
         reply_to_message_id: msg.message_id,
         parse_mode: 'MarkdownV2'
@@ -138,6 +172,23 @@ export class BeckyBot {
   private async _sendReply(msg: Message, message: string) {
     await this._bot.sendMessage(msg.chat.id, message, {
       reply_to_message_id: msg.message_id
+    });
+  }
+
+  private _emit<T extends Request, R = void>(
+    socket: Socket,
+    event: string,
+    request: T
+  ): Promise<R> {
+    socket.emit(event, request);
+    return new Promise<R>((resolve, reject) => {
+      socket.once(request.requestId, (res: R | ResponseError) => {
+        if (isResponseError(res)) {
+          reject(res);
+        } else {
+          resolve(res);
+        }
+      });
     });
   }
 }
