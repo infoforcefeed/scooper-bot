@@ -387,7 +387,7 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
   const {BeckyBot} = await import('./src/becky.mjs')
   const io = new Server();
   const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY, io, emojiMap})
-  const beckyBot = new BeckyBot({bot, io});
+  const beckyBot = new BeckyBot({bot, io})
 
   bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
     // Don't respond to commands. Too lazy to fix the onText regex.

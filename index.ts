@@ -384,8 +384,10 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 // AI conversations.
 (async () => {
   const {ShitBot} = await import('./src/chats.mjs')
+  const {BeckyBot} = await import('./src/becky.mjs')
   const io = new Server();
   const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY, io, emojiMap})
+  const beckyBot = new BeckyBot({bot, io})
 
   bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
     // Don't respond to commands. Too lazy to fix the onText regex.
@@ -419,6 +421,10 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     await shitBot.processImage(msg, prompt);
   }
 
+  async function becky(msg, command) {
+    beckyBot.process(msg, command);
+  }
+
   registerCommands([{
     command: 'mylifts',
     description: 'LIFT MORE',
@@ -437,6 +443,11 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     command: 'punk',
     description: 'MAKE NOISE',
     action: genPunk
+  }, {
+    command: 'becky',
+    description: `What's the weather?`,
+    parameters: ['.*'],
+    action: becky
   }])
   io.listen(6969)
 })()
