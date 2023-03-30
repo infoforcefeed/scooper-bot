@@ -1,9 +1,11 @@
+import axios from 'axios';
 import { createCipheriv, createDecipheriv, createHash } from 'crypto';
 import * as TelegramBot from 'node-telegram-bot-api';
 import {
   Message as TelegramMessage,
   User as TelegramUser
 } from 'node-telegram-bot-api';
+import { extname } from 'path';
 import { Server as SocketIoServer } from 'socket.io';
 
 import { AwooAi } from './awoo.mjs';
@@ -18,6 +20,11 @@ export interface AiChat {
 
 export interface AiImage {
   newImage(): ImageGeneration;
+  updateEmbedding(
+    embeddingName: string,
+    image: Buffer,
+    ext: string
+  ): Promise<void>;
 }
 
 export interface Response {
@@ -47,6 +54,7 @@ interface BotOptions {
   bot: TelegramBot,
   chatGptKey: string;
   io: SocketIoServer;
+  emojiMap: object;
 }
 
 enum User {
@@ -103,6 +111,7 @@ function isImageConversation(conv: any): conv is ImageConversation {
 
 export class ShitBot {
   private readonly _bot: TelegramBot;
+  private readonly _emojiMap: object;
   private readonly _chatGpt: ChatGpt;
   private readonly _openai: OpenAi;
   private readonly _awoo: AwooAi;
@@ -113,6 +122,7 @@ export class ShitBot {
 
   constructor(options: BotOptions) {
     this._bot = options.bot;
+    this._emojiMap = options.emojiMap;
     this._aiChat = this._chatGpt = new ChatGpt(options.chatGptKey);
     this._openai = new OpenAi(options.chatGptKey)
     this._aiImage = this._awoo = new AwooAi(options.io);
@@ -178,6 +188,23 @@ export class ShitBot {
     }
 
     await this._processImage(conv as ImageConversation, msg, prompt);
+  }
+
+  async processSticker(msg: TelegramMessage): Promise<void> {
+    if (msg.reply_to_message?.photo?.length) {
+      let photo = msg.reply_to_message.photo[0];
+      for (const p of msg.reply_to_message.photo) {
+        if (p.width > photo.width) photo = p; // Girthy.
+      }
+      await this._updateEmbedding(
+        this._getEmbeddingName(msg.chat.id, msg.sticker.emoji),
+        photo.file_id
+      );
+      await this._bot.sendMessage(msg.chat.id, msg.sticker.emoji, {
+        reply_to_message_id: msg.message_id
+      });
+      return;
+    }
   }
 
   private _getMessageKey(msg: TelegramMessage): string {
@@ -306,6 +333,23 @@ export class ShitBot {
     if (isPrivateMessage(msg)) {
       this._conversations.set(`${msg.chat.id}.${tgMessageId}`, conv);
     }
+  }
+
+  private _getEmbeddingName(chatId: number, emoji: string): string {
+    return `shitbot-embedding-${chatId}-${this._emojiMap[emoji]?.slug || 'unknown'}`;
+  }
+
+  private async _updateEmbedding(embeddingName: string, fileId: string) {
+    const imageLink = await this._bot.getFileLink(fileId);
+    const {data} = await axios.default.get<ArrayBuffer>(
+      imageLink,
+      {responseType: 'arraybuffer'}
+    );
+    await this._aiImage.updateEmbedding(
+      embeddingName,
+      Buffer.from(data),
+      extname(imageLink)
+    );
   }
 }
 

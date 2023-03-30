@@ -6,6 +6,7 @@ const fs = require('fs').promises
 const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true})
 const {Server} = require('socket.io')
+const emojiMap = require('unicode-emoji-json/data-by-emoji.json')
 
 let fsh
 async function getDbFileHandle() {
@@ -383,14 +384,20 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
 // AI conversations.
 (async () => {
   const {ShitBot} = await import('./src/chats.mjs')
+  const {BeckyBot} = await import('./src/becky.mjs')
   const io = new Server();
-  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY, io})
+  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY, io, emojiMap})
+  const beckyBot = new BeckyBot({bot, io})
 
   bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
     // Don't respond to commands. Too lazy to fix the onText regex.
     if (capturedMessage[0] === '/') return;
 
     await shitBot.process(msg, username, capturedMessage)
+  })
+
+  bot.on('sticker', async (msg) => {
+    await shitBot.processSticker(msg)
   })
 
   bot.onText(/^\/setai(?:@\w+)?$/, async function(msg) {
@@ -414,6 +421,10 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     await shitBot.processImage(msg, prompt);
   }
 
+  async function becky(msg, command) {
+    beckyBot.process(msg, command);
+  }
+
   registerCommands([{
     command: 'mylifts',
     description: 'LIFT MORE',
@@ -432,6 +443,11 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
     command: 'punk',
     description: 'MAKE NOISE',
     action: genPunk
+  }, {
+    command: 'becky',
+    description: `What's the weather?`,
+    parameters: ['.*'],
+    action: becky
   }])
   io.listen(6969)
 })()

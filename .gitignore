@@ -1,5 +1,6 @@
 node_modules
 bump-db.json
+index.js
 src/**/*.js
 src/**/*.mjs
 .vscode

@@ -33,6 +33,9 @@ export class OpenAi implements AiChat, AiImage {
   newImage(): ImageGeneration {
     return new OpenAiImageGeneration(this._openai);
   }
+  updateEmbedding(embeddingName, image, ext): Promise<void> {
+    throw new Error('Embeddings not implemented with OpenAI.');
+  }
 }
 
 class OpenAiThread implements Thread {
