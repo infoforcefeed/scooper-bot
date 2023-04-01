@@ -19,28 +19,21 @@ class NeedleMouseClient {
         this.client = client;
     }
 
+
     async sendMessage(chatId, text, parentMessageId) {
         try {
-            //1081600367307010120
-            // why is this here to start?
-            const sentMessage = await client.channels.cache.get('1081600367307010120').send(text)
+            const sentMessage = await client.channels.cache.get('1081600367307010120').send(text);
             const messageId = parseInt(chatId);
             const response = {
                 text: text,
-                messageId: messageId,
-                message_id: messageId,
-                conversation_id: messageId,
-                parent_id: messageId
+                messageId: sentMessage.id,
+                message_id: sentMessage.id,
+                conversation_id: chatId,
+                parent_id: parentMessageId || null,
             };
-            console.log(response)
-            if (parentMessageId) {
-                response.parentMessageId = parentMessageId;
-                console.log("parentMessageId", parentMessageId)
-            }
             return response;
-
         } catch (err) {
-            console.log(err)
+            console.log(err);
         }
     }
 }
@@ -79,14 +72,15 @@ class NeedleMouseClient {
 
         const msg = {
             chat: {
-                id: parseInt(message.channel.id),
+                id: parseInt(message.id),
                 type: 'group',
             },
-            from: {
-                id: parseInt(message.author.id),
+            ChatId: parseInt(message.id),
+            message_id: parseInt(message.id),
+            message_thread_id: parseInt(message.channel.id),
+            reply_to_message_id: {
+                message_id: parseInt(message.id),
             },
-            date: Math.floor(message.createdAt.getTime() / 1000),
-            text: message.content,
         };
 
         console.log(msg)
@@ -96,22 +90,10 @@ class NeedleMouseClient {
 
         if (message.mentions.has(client.user.id)) {
             try {
-                console.log("///////NO REFERENCE///////////")
                 console.log(message)
                 await shitBot.process(msg, AtUser, message.content)
             } catch (err) {
                 console.log(err)
-            }
-            // check if message is a reply
-            if (message.reference) {
-                try {
-                    console.log("////////HAS REFERENCE////////")
-                    console.log(message)
-                    await shitBot.process(msg, AtUser, message.content)
-                }
-                catch (err) {
-                    console.log(err)
-                }
             }
         }
     });
