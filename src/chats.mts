@@ -312,12 +312,20 @@ export class ShitBot {
     text: string,
     parentMessageId: string | null
   ): Promise<void> {
-    const res = await conv.thread.sendMessage(text, parentMessageId);
-    const sent = await this._bot.sendMessage(msg.chat.id, res.text, {
-      reply_to_message_id: msg.message_id
-    });
-
-    this._updateThreading(conv, msg, res.messageId, sent.message_id);
+    try {
+      const res = await conv.thread.sendMessage(text, parentMessageId);
+      const sent = await this._bot.sendMessage(msg.chat.id, res.text, {
+        reply_to_message_id: msg.message_id
+      });
+      this._updateThreading(conv, msg, res.messageId, sent.message_id);
+    } catch (err) {
+      console.log('Failed to talk to AI:', err);
+      await this._bot.sendMessage(
+        msg.chat.id,
+        '```\n' + JSON.stringify(err, null, 2) + '\n```',
+        {parse_mode: 'MarkdownV2', reply_to_message_id: msg.message_id}
+      );
+    }
   }
 
   private _updateThreading(
