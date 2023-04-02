@@ -18,5 +18,4 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3.3.0
       - name: Pull source
-        run: |
-          ssh ubuntu@scooper.shithouse.tv 'cd ~/scooper-bot && git pull'
+        run: ssh ubuntu@scooper.shithouse.tv
