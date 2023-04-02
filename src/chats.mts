@@ -151,8 +151,6 @@ export class ShitBot {
     atUser: string | null,
     text: string
   ): Promise<void> {
-    await this._bot.sendMessage(msg.chat.id, 'Code updated.');
-      
     const mt = this._getMessageKey(msg);
     let conv = this._conversations.get(mt) || null;
     if (conv || isPrivateMessage(msg) || atUser === BOT_NAME) {
