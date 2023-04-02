@@ -144,25 +144,25 @@ export class BeckyBot {
     }
     if (location.rain) {
       if (location.rain.day) {
-        message += `${location.rain.day}mm rain in last day. `;
+        message += `${f(location.rain.day)}mm rain in last day. `;
       } else if (location.rain.week) {
         message +=
-          `${location.rain.week}mm rain in last week, none in last day. `;
+          `${f(location.rain.week)}mm rain in last week, none in last day. `;
       } else {
         message +=
-          `${location.rain.month}mm rain in last month, none in last week. `;
+          `${f(location.rain.month)}mm rain in last month, none in last week. `;
       }
     }
     if (location.snow) {
       if (!location.rain) message += 'No rain in last month, ';
       if (location.snow.day) {
-        message += `${location.snow.day}mm snow in last day.`;
+        message += `${f(location.snow.day)}mm snow in last day.`;
       } else if (location.snow.week) {
         message +=
-          `${location.snow.week}mm snow in last week, none in last day.`;
+          `${f(location.snow.week)}mm snow in last week, none in last day.`;
       } else {
         message +=
-          `${location.snow.month}mm snow in last month, none in last week.`;
+          `${f(location.snow.month)}mm snow in last month, none in last week.`;
       }
     }
 
@@ -191,6 +191,10 @@ export class BeckyBot {
       });
     });
   }
+}
+
+function f(n: number): string {
+  return n % 1 ? n.toFixed(2) : n.toString();
 }
 
 function _makeRequestId(): string {
