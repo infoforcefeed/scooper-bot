@@ -386,7 +386,7 @@ bot.onText(/(spiderman|spider-man|spider man)/gi, function onEditableText(msg) {
   const {ShitBot} = await import('./src/chats.mjs')
   const {BeckyBot} = await import('./src/becky.mjs')
   const io = new Server();
-  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY, io, emojiMap})
+  const shitBot = new ShitBot({bot, chatGptKey: process.env.OPENAI_API_KEY!, io, emojiMap})
   const beckyBot = new BeckyBot({bot, io})
 
   bot.onText(/^(?:@([^\s]+)\s)?((?:.|\n)+)$/m, async function(msg, [, username, capturedMessage]) {
@@ -554,7 +554,7 @@ bot.onText(/fmuf/, function onEditableText(msg) {
 });
 
 let bumpLoad = 0;
-let bumpMap = null;
+let bumpMap = {};
 bot.onText(/^\\(\S+)$/, async (msg, [, bump]) => {
   if ((Date.now() - bumpLoad) > (24 * 60 * 60 * 1000)) {
     const bumps = await getBumps();

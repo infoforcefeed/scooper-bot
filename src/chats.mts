@@ -88,6 +88,7 @@ const USER_ALIASES = new Map<string, User>([
   ['quinlan', User.qdiffer],
   ['rabbit', User.Rabutt],
   ['reblink', User.Rabutt],
+  ['wally', User.qdiffer],
 ]);
 
 interface ChatConversation {
@@ -173,6 +174,9 @@ export class ShitBot {
 
     if (/[A2ufm]{5,}/i.test(text)) {
       await this._interject(decode('fmuf2', AAAAAA), msg, text);
+    }
+    if (/\b(?:police|cops?|officer|arrest(?:ed)?|legal|law)\b/i.test(text)) {
+      await this._interject(decode('arrested', WEEWOO), msg, text);
     }
   }
 
@@ -349,7 +353,7 @@ export class ShitBot {
 
   private async _updateEmbedding(embeddingName: string, fileId: string) {
     const imageLink = await this._bot.getFileLink(fileId);
-    const {data} = await axios.default.get<ArrayBuffer>(
+    const {data} = await axios.get<ArrayBuffer>(
       imageLink,
       {responseType: 'arraybuffer'}
     );
@@ -451,6 +455,7 @@ const secrets = new RandomSelector([
   'V1xOBGixonCndx4p+8AwIcCa+e/dX7PE26RYdtT5S5z5UIBDvw1HDn/8kcXUCrNem9ADCtfT35q801KQi5lyx53uPdBW9uU4KoNEv0wCEmpmv3tpHIOkU1nlA1kP+l7M',
   'uGPfFI8V2clmOjSBKopDRDN3r+tlDehkT80XmPOJ0fJy6ajfpRo9G6WbA7HKcaY7HjCG7kG8+pao/3kp/JiAW2UA8j1yylt86BG5LyuO5ElpbGeTv4Ulg2hAjRdkNKmf5DAfCyIh5RpWf3RkvQ9YbHMuhnd0Xd+c5Td29SiIjR2wUULZImmlLOKNCmsGxgZeq2I9QuxEi4FCBoGbxfTrsuHNDDcxTcVep/AiTTdQYRvsHFPf2Wuk/QhnPM4AKEqys4k+eJRC53ZWnsttHFEgLZuY34A1JYxBmPCTcDhRsRjDux/q+VN4E/ZKSICB5UoNMs4JuEqX0gM30WapSwz3aU3NGK2sUpudNOQqT7AwKaOVkzSKDOKfQwDMBCoh0oQJ2A8cqK9KMLtia+kbV7V6gxYM37NnIn0i9Q98/KX2XP+f9NIV+z+c+WsScLOFTSNJM1bzF/yf3wi8JO5LLlQ6Gd41Vyvxe5REVyzuFnsElIa1BSkQDwktEZoRhi/XMuE/tG5IjoxaSVsUeWcZpZXAi44tHyIP13RIHjbw3D1XNgJKPGI5NT5h6EJHY6rZd2HS',
   'rXt8cEkneylSBsw3fm/WHL/Qoy7FK6zX6+Gzxz0hQIOVAmGWAo5V61psMcTv+2E3OVXdyc4RHJG/JSmngM3PosFH6p88qN3lhYc3cpzC0mMrZ8fjQnNNq2dz3Zdbr9EMkX+1Uf8X5jK5MHGuqnMQqhbA+9TAblC2pqm3xTr8/4I+u3BEVfC39zEOric60cq15HdZbhFRS+T7ZtXhaFhTYUVqc+HR5gchUPr2q3GOgVuelyTzUcf7NbpSacJr6T0/PGG3rXNKXq48ZrVXzqXBcT56CTAbm+qQwVOLZIqrfSu0ffZaWbay022bbUDQfAM2bSkBsP0cMOcZjPjVvkXM5y1OYaph9hEWoGc1JfNmWTiMIFfkjXPUzkCeNQ0L/TPY',
+  'DzCfZkqN37N9bxmDK2+4STc4JHJZAi8+MLkl8Yl8cZB8G7/yNRnNVmxP7GB+hqkeDdZZ5vViRmNpzHDOd6JJRNbyj0dsxBU26/AKzfaMlfFulaVuV+3Q0SsUyE8dBFOMiAwD0ZYcSlJknYu/YgsSCzyUfIm0FjvGLP/gucEL8Bco1zfOsHW25LmY1kn0KZD47NzAaWrKJQuHlRJ61VFUcw==',
 ]);
 function selectSecret(key: string): string | null {
   try {
@@ -461,9 +466,16 @@ function selectSecret(key: string): string | null {
 }
 
 const userSecrets = new Map([
+  [User.leCalcifer, new RandomSelector(['dRfHLTpZyZuJyCROjXLmTw7PXNFNBBdiFKQAlXva9zNtEcxoHCzn01hdqhXJrYfh0eE1XuYI3HLO6zi7euaF6k/WB8TJgpVXl/8tf4byVnl0oTXCAtRuLM9VpKHKJBjxrWu9lgZaqMVUQMwUbPZwZw=='])],
   [User.NotAWolfe, new RandomSelector(['4wHuhmfA5KA+lGOwA+tyM5QLHlfVKfJLnMW0oYxpKvRLHTfLWNY3LWERk0v4mO+9PxpRb9h9x1Ki93+bQBdmNX1oovEUte4JzqMr2imQCm3XE/exdOQzVFJiGY1s0uJScObyjJGc32hXto1YhwVC9Mo+yaZKEJNssRrVj+awRKicYkcV5hp7qKLEOH7E2UlyRAn6ZiJ7Zc+3uKp1OSkRVSnWCsD0n8hEIfcl7JFh/863NiMofdMBggCKcF1EaiSsVuHTUkNNbg6t25FDgNmYelE+6Fkt3UnJP65rwrKrKvQR1eOxdGzS+cVfYP10OzzhVQ/07K5WwzKE4YPs+i2YvQTEBjvcrNPBx+zZgL77v2sQovvOK1WmkKwE6eiwGCkEmCeabuNFkBh9H32QTbAeTbFnHL5IGqCPicz65Ull32T6hfh1q28uGLBTsA3O5giXQXJMUJBY4IecCOMadjSaKj07hmnied+7SWq/Vx6rT2rmDhAFZLYjYSnpS91ObgXlZsiwXvQDUPf4Lmw+bOlC8t4q9sXJ9IHLOAiu/jj4TJeGNNG7efDyDPm8n2yGZ/syj1PmJBWZb581pWC1zz9oo8AU1vAmz2KwdJDTiVN/yngUj7K4Lm4t+cAeII7B9Y5IxmXLQEnoqLK3SRy+NY5sXE422D7MvFvwkNWeeKLCLyXiFlgnTI0uOj0wSYUcF1V+Im6ib9O2kzPkmi1+iQy6Rsy6gDUXTfpzYOFD4DJ339n55TlIzyrbL6geiy9bfvcj4rVABne1YpJ6Pd9BfVoTUw=='])],
-  [User.Prestoon, new RandomSelector(['InMJkgEFS3mBfL3jeJqyKS+4e1s8ikv2c+mqgvroljEFgZqNelL8zUac97/0fRW7KJ+RnX7AAZbDz87kBCdle+RQirJbR87wD/n2wJjkvx2hEuWLFIcQsIjOV8oJRYVuNP+kQffTd31CfnV6D2QXKhuPoFE5qNxZuWE4e7EBRO1zsw4uw8uuUr0D5dtLx1wiq4JVrlMtPTc8ufzKycF0QObmd+Lslbwvpvc/T0eeUa3QlsWmODMyUImbgGFlVlzelC4AF4k79diWSZ3mAJfillwaHP4MGIqMUuZ9xHE19w5bKebB9HwGH03MFKLjOm02MvZCvmHDPPdXk9KCLVFWc4hL3pZYDny6mPEdNxyqLSXmAZYgLmX/F0ilWBf7TzEDZ5UeiO23O4NpIK8Y9mwF4+rDGxFw21WSUi+dEFX53j4='])],
-  [User.qdiffer, new RandomSelector(['Xcpjosi58nMnYxurW6e7EaVDam/cHk3q3V60/j8955+/75SkZzq0NHBLqh7j09EfeQn4kmz5plltYynamPh7M213HGQh3yQ4TuCSVYfH30BTYtzZ5YrerMEyZ3agltjurqvqlutDTbH3qQA/pwYIHe9RmvmBmTqobwJ3d6ZkSs5Za+P9V0Yun3PUGtYGf6xwwRnyQpnEINNqEIrXKd6bvdn2ZYS6kx9fk5x8pbbFrozrsYiVQomfoeXOmoc1q0Cak5Onpmf8u3R5Bo2zTRQ7wmEH6KgHspl9LufbHwpXsykwxOqZ6B+7DfDE25LKSLz1qNKhgKg/6Bv6mKd6TEXJ0A=='])],
+  [User.Prestoon, new RandomSelector([
+    'InMJkgEFS3mBfL3jeJqyKS+4e1s8ikv2c+mqgvroljEFgZqNelL8zUac97/0fRW7KJ+RnX7AAZbDz87kBCdle+RQirJbR87wD/n2wJjkvx2hEuWLFIcQsIjOV8oJRYVuNP+kQffTd31CfnV6D2QXKhuPoFE5qNxZuWE4e7EBRO1zsw4uw8uuUr0D5dtLx1wiq4JVrlMtPTc8ufzKycF0QObmd+Lslbwvpvc/T0eeUa3QlsWmODMyUImbgGFlVlzelC4AF4k79diWSZ3mAJfillwaHP4MGIqMUuZ9xHE19w5bKebB9HwGH03MFKLjOm02MvZCvmHDPPdXk9KCLVFWc4hL3pZYDny6mPEdNxyqLSXmAZYgLmX/F0ilWBf7TzEDZ5UeiO23O4NpIK8Y9mwF4+rDGxFw21WSUi+dEFX53j4=',
+    'InMJkgEFS3mBfL3jeJqyKS+4e1s8ikv2c+mqgvroljEg8ypdfjRNdydOllYhuS0lOmRFNFdFq57pyemsOVk2q8UZYU8ggCUkNpz2s8gRHRw4IK+l2SPxkMqhni0dN8z9gWSh0rdDq2C80vehiASqP5T4gTm10lIFnKRHuC2dLtMs8w3dUd6NAAYMxRuKtpg23EzkqZxSG124AlPnZlzwCvybo1HMGPdztAgXT8VWXNpj34C+q4NRkTp6AbGrcZx6pT0KJTORtT0vLJfrSM0XLuT1GhC6g5u6MTJPRL+XBSwalC1yX17XgnZENK+4iUg9o38u1ZLCXBUTyc82kngsW0UlhqPaIOKYVGb2dlxOv1dIZ6Q2Ebzy+FH+gIVf+JR54NRSKZkbNLe/FUrh9iTP7j5oOwimAIe7hIoslQbt5yw=',
+  ])],
+  [User.qdiffer, new RandomSelector([
+    'Xcpjosi58nMnYxurW6e7EaVDam/cHk3q3V60/j8955+/75SkZzq0NHBLqh7j09EfeQn4kmz5plltYynamPh7M213HGQh3yQ4TuCSVYfH30BTYtzZ5YrerMEyZ3agltjurqvqlutDTbH3qQA/pwYIHe9RmvmBmTqobwJ3d6ZkSs5Za+P9V0Yun3PUGtYGf6xwwRnyQpnEINNqEIrXKd6bvdn2ZYS6kx9fk5x8pbbFrozrsYiVQomfoeXOmoc1q0Cak5Onpmf8u3R5Bo2zTRQ7wmEH6KgHspl9LufbHwpXsykwxOqZ6B+7DfDE25LKSLz1qNKhgKg/6Bv6mKd6TEXJ0A==',
+    'hDhEqgT6Ev8Lm0I511JYnCNLaihvvYqEGIW/E4bB/NiwC8mq6tcD/HXJGo7tb/4RVIbSYf2JSHpcWKeMcim2dA==',
+  ])],
   [User.Rabutt, new RandomSelector(['w3z372KHI7X8Kd1mNQLEuVP5BGxlY6trBS1Qb/op1jXM/ZHkDTksFn9DgtiR9Q9g3IicdwAvRc8YwAeApjX67NaXRDJrndkQD8bkEoVOKTdoT/FeNWzPeEG1QNRhDS24QfmHTkj4jA8Q+akhGF7EHEz0zeUJKDgM3aX2uj5Zt0JrUz7CD67i1rnB08Z0TKwMFKYia8Bioq/YuqNQn9HMAAT9ATAUNVHEADRCAugOvw7lgBT3eBeyiZb0Z4PETg2eEH/7GiFE8gD787x1nlCH6SCNw8SlW4o5K3aCJpkee3/pWIESDaf56wFC/4JZcI3p6l0/2nrn92FrhzJppUZe226Uvu2fB50jbcXvHmTVd5NNSlhBvs0Z2n5wElwHmwpDBttpD9lZvWW7X1x2WvOCMj0ovyzcvf6Nb+bilNk5aLGZ113qPPSjGYFmyVmsMWlr563oJBLFAzqlDWeGso+Thoojf7B/1UNvGbe1AdXWcWj7ITUeIdv5MCo9+hqMY+8lTrBLOV/geusoVIk8EkQQYQcTgiC6V8fj/WosORLT3h0Y38D3TimdKGGlW4fLhztBT2+ov6q9Ow/O99ztd9ZWdHKbdhw5DMMnNj3mp31WTaWhKsRg4Lug9ufCMAE6brxJ'])]
 ]);
 function selectUserSecret(user): string | null {
@@ -477,3 +489,4 @@ function selectUserSecret(user): string | null {
 }
 
 const AAAAAA = 'm1yOf2EGn3TY2WtxfIwI7OeNO0BVdFLvF5ffWvNAfao39EEqLU/qOmjoqTkxgFJb';
+const WEEWOO = 'b0GfproqBC2eN/D0CSLEqu5sPMdpntZE119NOmUxYWkOolZHwqZj2x/DbNUzqtZoKrS6BbnKuEpszkGVCjswz+TKs8z+0uzdUVomUkKQPlFufQrtoiJkGrAs0yH0akI0+rt9i5M8x9T4gGwf5eClNA==';
