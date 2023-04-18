@@ -8,14 +8,6 @@ interface BotOptions {
   io: SocketIoServer
 }
 
-interface Request {
-  requestId: string;
-}
-
-interface ResponseError {
-  error: number;
-}
-
 interface Location {
   id: string;
   name: string;
@@ -34,10 +26,6 @@ interface LocationResponse {
   location: Location,
   rain?: PrecipitationTotals;
   snow?: PrecipitationTotals;
-}
-
-function isResponseError(res: any): res is ResponseError {
-  return res && typeof res.error === 'number';
 }
 
 export class BeckyBot {
@@ -172,23 +160,6 @@ export class BeckyBot {
   private async _sendReply(msg: Message, message: string) {
     await this._bot.sendMessage(msg.chat.id, message, {
       reply_to_message_id: msg.message_id
-    });
-  }
-
-  private _emit<T extends Request, R = void>(
-    socket: Socket,
-    event: string,
-    request: T
-  ): Promise<R> {
-    socket.emit(event, request);
-    return new Promise<R>((resolve, reject) => {
-      socket.once(request.requestId, (res: R | ResponseError) => {
-        if (isResponseError(res)) {
-          reject(res);
-        } else {
-          resolve(res);
-        }
-      });
     });
   }
 }

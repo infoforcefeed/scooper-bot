@@ -106,9 +106,8 @@ export class RpcSocket {
     Res,
     Req extends Request = any
   >(rpc: string, req: Req, itemKey?: string): AsyncIterable<Res> {
-    if (!itemKey) itemKey = rpc;
     req.requestId = this.nextRequestId();
-    return new RpcSocketIterator<Res>(this.socket, rpc, req, itemKey);
+    return new RpcSocketIterator<Res>(this.socket, rpc, req, itemKey ?? rpc);
   }
 
   private nextRequestId(): string {
