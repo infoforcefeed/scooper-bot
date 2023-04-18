@@ -1,5 +1,7 @@
-import TelegramBot, {Message} from 'node-telegram-bot-api';
+import TelegramBot, { Message } from 'node-telegram-bot-api';
 import { Server as SocketIoServer, Socket } from 'socket.io';
+
+import { RpcSocket } from './rpc-socket.mjs';
 
 interface BotOptions {
   bot: TelegramBot,
@@ -40,7 +42,7 @@ function isResponseError(res: any): res is ResponseError {
 
 export class BeckyBot {
   private readonly _bot: TelegramBot;
-  private _sockets: Socket[] = [];
+  private _sockets: RpcSocket[] = [];
 
   constructor(options: BotOptions) {
     this._bot = options.bot;
@@ -62,38 +64,36 @@ export class BeckyBot {
   }
 
   private _onSocket(socket: Socket) {
-    this._sockets.push(socket);
+    this._sockets.push(new RpcSocket(socket));
     console.log('New Becky connected. Total:', this._sockets.length);
     socket.once('disconnect', () => {
-      this._sockets = this._sockets.filter((s) => s !== socket);
+      this._sockets = this._sockets.filter((s) => s.isSocket(socket));
       console.log('Becky disconnected. Remaining:', this._sockets.length);
     });
   }
 
   private async _listLocations(msg: Message) {
-    const requestId = _makeRequestId();
     const socket = this._pickSocket();
     let count = 0;
-    socket.on(`${requestId}_location`, async (location: LocationResponse) => {
-      ++count;
-      await this._sendLocation(msg, location);
-    });
     try {
-      await this._emit(socket, 'listLocations', {requestId});
+      for await (
+        const location of socket.each<LocationResponse>('location', {})
+      ) {
+        ++count;
+        await this._sendLocation(msg, location);
+      }
       if (count === 0) {
         await this._sendReply(msg, 'No locations.');
       }
     } catch (err) {
       await this._sendError(msg, err);
     }
-    socket.removeAllListeners(`${requestId}_location`);
   }
 
   private async _addLocation(msg: Message, name: string, lat: number, lon: number) {
-    const requestId = _makeRequestId();
     const socket = this._pickSocket();
     try {
-      await this._emit(socket, 'addLocation', {requestId, name, lat, lon});
+      await socket.request('addLocation', {name, lat, lon});
       await this._sendReply(msg, `Added location ${name}.`);
     } catch (err) {
       await this._sendError(msg, err);
@@ -101,25 +101,25 @@ export class BeckyBot {
   }
 
   private async _pickLocations(msg: Message, where: string) {
-    const requestId = _makeRequestId();
     const socket = this._pickSocket();
     let count = 0;
-    socket.on(`${requestId}_location`, async (location: LocationResponse) => {
-      ++count;
-      await this._sendLocation(msg, location);
-    });
     try {
-      await this._emit(socket, 'whereToGo', {requestId, where});
+      for await (
+        const location of
+        socket.each<LocationResponse>('whereToGo', {where}, 'location')
+      ) {
+        ++count;
+        await this._sendLocation(msg, location);
+      }
       if (count === 0) {
         await this._sendReply(msg, 'No locations.');
       }
     } catch (err) {
       await this._sendError(msg, err);
     }
-    socket.removeAllListeners(`${requestId}_location`);
   }
 
-  private _pickSocket(): Socket {
+  private _pickSocket(): RpcSocket {
     return this._sockets[0];
   }
 
@@ -195,8 +195,4 @@ export class BeckyBot {
 
 function f(n: number): string {
   return n % 1 ? n.toFixed(2) : n.toString();
-}
-
-function _makeRequestId(): string {
-  return Math.random().toString();
 }
