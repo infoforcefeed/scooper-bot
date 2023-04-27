@@ -65,7 +65,8 @@ export class BeckyBot {
     let count = 0;
     try {
       for await (
-        const location of socket.each<LocationResponse>('location', {})
+        const location of
+        socket.each<LocationResponse>('listLocations', {}, 'location')
       ) {
         ++count;
         await this._sendLocation(msg, location);
