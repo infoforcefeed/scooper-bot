@@ -55,7 +55,7 @@ export class BeckyBot {
     this._sockets.push(new RpcSocket(socket));
     console.log('New Becky connected. Total:', this._sockets.length);
     socket.once('disconnect', () => {
-      this._sockets = this._sockets.filter((s) => s.isSocket(socket));
+      this._sockets = this._sockets.filter((s) => !s.isSocket(socket));
       console.log('Becky disconnected. Remaining:', this._sockets.length);
     });
   }
