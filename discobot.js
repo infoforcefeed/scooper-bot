@@ -14,22 +14,22 @@ const client = new Client({
 em = new EventEmitter();
 const io = new Server();
 
+
+// calling a needlemouse client class, define an interface, given a object, this interface can tell you what to expect in this object.
+// needlemouse client is using and passing it as if it is implementing that telegram bot interface. Chat.MTS is expecting us to give it a telegram bot.
+// we might be able to get  by with just send message,
 class NeedleMouseClient {
     constructor({ client }) {
         this.client = client;
     }
 
-
-    async sendMessage(chatId, text, parentMessageId) {
+    // hey discord, this is my message
+    async sendMessage(chat, text, res) {
         try {
-            const sentMessage = await client.channels.cache.get('1081600367307010120').send(text);
-            const messageId = parseInt(chatId);
+            const sentMessage = await client.channels.cache.get(chat.channel).send(text);
+            const messageId = parseInt(chat.messageId);
             const response = {
-                text: text,
-                messageId: sentMessage.id,
                 message_id: sentMessage.id,
-                conversation_id: chatId,
-                parent_id: parentMessageId || null,
             };
             return response;
         } catch (err) {
@@ -72,7 +72,10 @@ class NeedleMouseClient {
 
         const msg = {
             chat: {
-                id: parseInt(message.id),
+                id: {
+                    messageId: message.id,
+                    channel: message.channel.id,
+                },
                 type: 'group',
             },
             ChatId: parseInt(message.id),
