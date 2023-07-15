@@ -288,9 +288,22 @@ export class ShitBot {
     msg: TelegramMessage,
     text: string
   ): Promise<void> {
-    if (training) {
-      const conv = this._newChatConversation(msg);
-      await this._replyToMessage(conv, msg, training, /*parentMessageId=*/null);
+    if (!training) return;
+
+    const conv = this._newChatConversation(msg);
+    try {
+      const res =
+        await conv.thread.sendMessage(training, /*parentMessageId=*/null);
+      const sent = await this._bot.sendMessage(msg.chat.id, res.text);
+
+      // To avoid attaching to the original thread, interjections do not reply
+      // to the triggering message. This requires manually updating the
+      // conversations thread and removing the link to the originating message.
+      conv.messageIds.set(sent.message_id.toString(), res.messageId);
+      this._conversations.set(this._conversationKey(sent), conv);
+      this._conversations.delete(this._conversationKey(msg));
+    } catch (err) {
+      console.log('Interjection failed with AI:', err);
     }
   }
 
