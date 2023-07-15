@@ -2,22 +2,23 @@
   "scripts": {
     "compile": "tsc",
     "start": "while true; do nodemon --exitcrash; sleep 1; done",
-    "mon": "nodemon"
+    "mon": "nodemon",
+    "mon-start": "tsc && ts-node ./index.ts"
   },
   "dependencies": {
     "@types/node": "^18.14.0",
     "@types/node-telegram-bot-api": "^0.61.2",
     "axios": "^1.3.5",
-    "chatgpt": "^4.3.2",
+    "chatgpt": "^5.2.5",
     "forever": "^4.0.3",
     "jimp": "^0.22.7",
     "node-telegram-bot-api": "^0.61.0",
-    "nodemon": "^2.0.20",
+    "nodemon": "^3.0.1",
     "openai": "^3.2.1",
     "socket.io": "^4.6.1",
     "strtok3": "^7.0.0",
     "ts-node": "^10.9.1",
-    "typescript": "^4.9.5",
+    "typescript": "^5.1.6",
     "unicode-emoji-json": "^0.4.0"
   }
 }

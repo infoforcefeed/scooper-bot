@@ -1,6 +1,6 @@
 {
   "watch": [".", "src"],
   "ignore": ["*.test.js", "**/fixtures/**"],
-  "ext": "mts,mjs,ts,js",
-  "exec": "ts-node ./index.ts"
+  "ext": "mts,ts",
+  "exec": "npm run mon-start"
 }
