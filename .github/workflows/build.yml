@@ -18,4 +18,5 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3.3.0
       - name: Pull source
+        # This will trigger an authored_keys command to update the repo.
         run: ssh ubuntu@scooper.shithouse.tv
