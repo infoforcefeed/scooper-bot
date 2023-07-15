@@ -353,7 +353,7 @@ export class ShitBot {
 
   private async _updateEmbedding(embeddingName: string, fileId: string) {
     const imageLink = await this._bot.getFileLink(fileId);
-    const {data} = await axios.default.get<ArrayBuffer>(
+    const {data} = await axios.get<ArrayBuffer>(
       imageLink,
       {responseType: 'arraybuffer'}
     );
