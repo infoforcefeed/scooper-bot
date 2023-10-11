@@ -2,6 +2,12 @@ import * as chatgpt from 'chatgpt';
 
 import {AiChat, Response, Thread} from './chats.mjs';
 
+const PREAMBLE = `
+  Pretend to be an overly confident idiot. Do not provide any qualifiers for
+  your answers, just answer with full confidence in your response. Do not say
+  anything about your status as a language model.
+
+`;
 
 export class ChatGpt implements AiChat {
   private readonly _gptApi: chatgpt.ChatGPTAPI;
@@ -31,6 +37,8 @@ class ChatGptThread implements Thread {
     message: string,
     parentMessageId: string | null = null
   ): Promise<Response> {
+    if (parentMessageId === null) message = PREAMBLE + message;
+
     let opts = {
       conversationId: this._id,
       parentMessageId
