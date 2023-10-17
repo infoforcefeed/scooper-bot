@@ -199,16 +199,22 @@ async function getSet(setName) {
   }
 }
 
-async function cleanBumps([{botInfo}]) {
+async function cleanBumps(arg) {
+  if (!process.env.CLEAN_BUMPS) return arg
+  console.log('cleanin bumps')
+  const [{botInfo}] = arg
   let setIdx = 0
   let currSet
   while (currSet = await getSet(getStickerSetName({botInfo, setIdx}))) {
     for (let s of currSet.stickers) {
+        console.log('clearing', s.file_id)
       await bot.deleteStickerFromSet(s.file_id)
     }
     ++setIdx
   }
   await fs.unlink('./bump-db.json')
+  arg[1] = dbDefault
+  return arg
 }
 
 async function getMetadata() {
@@ -622,7 +628,9 @@ Promise.all([
   getMetadata(),
   getDbFileHandle().then(loadDb),
 ])
+  .then(cleanBumps)
   .then(async function([{botInfo}, db]) {
+    console.log("starting scraping")
     startLinkScraper(botInfo, db)
     while (true) {
       const bumps = await getBumps()
@@ -630,5 +638,4 @@ Promise.all([
       await sleep(4*60*60*1000)
     }
   })
-  //.then(cleanBumps)
 //console.log(process.env)

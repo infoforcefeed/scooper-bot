@@ -8,7 +8,7 @@ const MODELS = new Map<string, string>([
   ['gpt-3.5-turbo', 'gpt-3.5-turbo'],
   ['gpt3', 'gpt-3.5-turbo'],
   ['gpt4', 'gpt-4'],
-  ['default', 'gpt-4-0613'],
+  ['default', 'gpt-3.5-turbo'],
   ['text-davinci-003', 'text-davinci-003'],
   ['davinci', 'text-davinci-003'],
 ]);
