@@ -8,7 +8,7 @@
   "dependencies": {
     "@types/node": "^18.14.0",
     "@types/node-telegram-bot-api": "^0.61.2",
-    "axios": "^1.3.5",
+    "axios": "^1.6.0",
     "chatgpt": "^5.2.5",
     "forever": "^4.0.3",
     "jimp": "^0.22.7",
